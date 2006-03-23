@@ -1,0 +1,2183 @@
+%
+% Copyright (c) 2003, 2004, 2005 Andrew De Ponte.
+% Permission is granted to copy, distribute and/or modify this document
+% under the terms of the GNU Free Documentation License, Version 1.2
+% or any later version published by the Free Software Foundation;
+% with the Invariant Sections being Front-Cover Texts, with the
+% Front-Cover Texts being abstract. A copy of the license is included
+% in the section entitled "GNU Free Documentation License".
+%
+
+%
+% FileName:     pao.tex
+% Author:       Andrew De Ponte
+% E-Mail:       cyphactor@socal.rr.com
+% AIM:          HUNNYnNUTTS
+% Description:  This document is a LaTeX document containing the
+%               assumptions and observations about the synchronization
+%               protocol used by Sharps Zaurus SL-5600 v1.0 ROM and
+%               Sharps Zaurus SL-5500 v3.10 ROM, in hopes to produce
+%               a document that will contain enough information about
+%               the protocol that it will allow people to write software
+%               to interact with the Zaurus via this protocol.
+%
+
+\newcommand{\synctypes}{
+  \begin{enumerate}
+  \item To-Do 0x06.
+  \item Calendar 0x01.
+  \item Address Book 0x07.
+  \end{enumerate}
+}
+
+% Here I discuss the assumptions and observations of the
+% protocol used for synchronization between a computer and
+% the Zaurus SL-5600.
+\part{Protocol Assumptions and Observations}
+
+    % Here I describe the layer of the protocol stack at which
+    % this protocol sits.
+    \section{Protocol Layer}
+
+    The protocol used for Synchronization between Sharps Microsoft Windows
+    version of Qtopia Desktop and the Zaurus SL-5600 is what could be
+    considered an application layer protocol. It sits directly on top of
+    TCP (Transmission Control Protocol).
+
+    % Here I discuss the the idea of the protocol being connection
+    % based and its advantages etc.
+    \section{Connection Based}
+
+    The protocol at hand is \emph{connection-based} rather than connection-less
+    like a protocol would be if it sat on top of UDP (User Datagram Protocol),
+    or even the raw sockets layer. The fact that it is \emph{connection-based}
+    provides it with the advantage of having data assurance handled by
+    the TCP layer rather than having to handle it at the software layer.
+
+    % Here I discuss the findings about the connection initiation for
+    % this protocol.
+    \section{Connection Initiation}
+
+    This protocol handles two positions from which connections can be
+    initiated.
+
+        \subsection{Zaurus}
+
+        One position is when the synchronization is initiated by the Zaurus.
+        In this case the Zaurus creates a TCP connection to the Desktop on
+        port 4245.
+
+        \subsection{Desktop}
+
+        The second position is when the synchronization is initiated by the
+        Desktop. In this case the Desktop creates a TCP connection to the
+        Zaurus on port 4244. The Desktop then sends a RAY message over this
+        connection to the Zaurus. The Zaurus then responds to the previous
+        mentioned data by creating a TCP connection to the Desktop as it
+        does in the first position.
+
+    % Here I discuss messages that are commonly seen and what they are
+    % used for.
+    \section{Common Messages}
+
+    A number of messages are common within this protocol. Common messages
+    are messages that are byte for byte the same despite their origin.
+
+        \subsection{Request Message}
+
+        The \emph{Request Message} is a message that is used to notify
+        the member at the opposing side of communication that the sending
+        side is ready to receive a message. The message is as follows.
+
+        \begin{verbatim}
+        ascii:  NUL  NUL  NUL  NUL  NUL       ENQ
+          dec:    0    0    0    0    0  150    5 
+          hex: 0x00 0x00 0x00 0x00 0x00 0x96 0x05
+        \end{verbatim}
+
+        \subsection{Acknowledgment Message}
+
+        The \emph{Acknowledgment Message} is a message that is used to notify
+        the member at the opposing side of communication that the sending
+        side received the previously sent message. The message is as follows.
+
+        \begin{verbatim}
+        ascii:  NUL  NUL  NUL  NUL  NUL       ACK
+          dec:    0    0    0    0    0  150    6 
+          hex: 0x00 0x00 0x00 0x00 0x00 0x96 0x06
+        \end{verbatim}
+
+        \subsection{Abort Message}
+
+        The \emph{Abort Message} is a message that is used to notify the
+        member at the opposing side of communication that the sending
+        side is aborting the synchronization. The message is as follows.
+
+        \begin{verbatim}
+        ascii:   NUL  NUL  NUL  NUL  NUL       CAN
+          dec:     0    0    0    0    0  150   24
+          hex:  0x00 0x00 0x00 0x00 0x00 0x96 0x18
+        \end{verbatim}
+
+    % Here I discuss the message format (the format used for non common
+    % messages).
+    \section{Message Format}
+
+    Both Qtopia Desktop as well as the Zaurus use a pretty basic message
+    format. It consists of four parts, a \emph{message header}, a
+    \emph{message body size}, a \emph{message body},
+    and a \emph{message checksum}. Note: \emph{This message format only
+    applies to non common messages.}
+
+    \begin{verbatim}
+    [ Header (13 bytes) ] [ Body Size (2 bytes) ] [ Body (X bytes) ] [ Checksum (2 bytes) ]
+    \end{verbatim}
+
+        \subsection{Message Header}
+
+        The \emph{message header} consists of the first 13 bytes of the
+        message. The \emph{message header} is shared by all messages
+        originating from the same object. There are two types of
+        \emph{message headers}, the Zaurus \emph{message header} and
+        the Qtopia Desktop \emph{message header}.
+
+            \subsubsection{Zaurus Message Header}
+
+            The Zaurus message header consists of the following
+            13 static bytes.
+
+            \begin{verbatim}
+            ascii:  NUL  NUL  NUL  NUL  NUL       SOH  SOH  NUL
+              dec:    0    0    0    0    0  150    1    1    0  255  255  255  255
+              hex: 0x00 0x00 0x00 0x00 0x00 0x96 0x01 0x01 0x00 0xff 0xff 0xff 0xff
+            \end{verbatim}
+
+            \subsubsection{Qtopia Desktop Message Header}
+
+            \label{qtopia:msgheader}
+            The Qtopia Desktop message header
+            consists of three sections, 1 section of 9 static bytes,
+            followed by 2 variable bytes representing the
+            \emph{message content size}, followed by 2 static bytes.
+            This looks as follows:
+            
+            \begin{verbatim}
+            ascii:  NUL  NUL  NUL  NUL  NUL       SOH  SOH   FF            NUL  NUL
+              dec:    0    0    0    0    0  150    1    1   12 [  ] [  ]    0    0
+              hex: 0x00 0x00 0x00 0x00 0x00 0x96 0x01 0x01 0x0c [  ] [  ] 0x00 0x00
+            \end{verbatim}
+
+            \emph{Note:} The [  ] represents a variable byte. In the above
+            case one of the 2 bytes from the \emph{message content size}.
+
+                \paragraph{Message Content Size}
+                The \emph{message content size}
+                is represented by two bytes. It is the
+                \emph{message body size} minus
+                \emph{the message type size (3 bytes)}.
+                \emph{Note:} See the \emph{section \ref{msgtype}} for info
+                on \emph{message type}.
+                The right most byte is basically a counter for 256s. If the
+                \emph{message content size} is larger than 255 the
+                right most byte should represent the proper multiplier while
+                the left most byte contains the remainder (less than 256).
+
+                \begin{verbatim}
+                [ Remainder (lsb) ] [ 256s Counter (msb) ]
+                \end{verbatim}
+                
+                This layout of bytes is know to be
+                the little endian byte order. Little endian is NOT the
+                standard byte order for networking. So in this case the
+                \emph{message content size} would be
+                represented in C/C++ as an \emph{unsigned short integer}.
+                If the host box (Desktop) is a big endian box then it would
+                have to be converted from little endian to big endian to get
+                the proper value.
+            
+        \subsection{Message Body Size}
+        
+        The \emph{message body size} is the size of the \emph{message body}
+        in bytes. It is represented by two bytes. These two bytes are NOT
+        represented in the standard byte order for networking (big endian).
+        They are represented in little endian. This means that one should
+        swap the byte order if their box is a big endian box.
+        For more information on little endian
+        refer to section \ref{qtopia:msgheader}.
+
+        \begin{verbatim}
+        [ Remainder (lsb) ] [ 256s Counter (msb) ]
+        \end{verbatim}
+
+        \subsection{Message Body}
+
+        The message body consists of two parts, the \emph{message type},
+        and the \emph{message content}.
+
+        \begin{verbatim}
+        [ Message Type (3 bytes) ] [ Message Content (X bytes) ]
+        \end{verbatim}
+
+            \subsubsection{Message Type}
+            \label{msgtype}
+            The \emph{message type}
+            consists of 3 bytes which are of values that are displayable
+            as alphabetic ASCII characters (A-Z). The \emph{message type}
+            bytes are the first three bytes in the \emph{message body}.
+            For information on the known \emph{message types} please
+            refer to sections \ref{qtopia:msgs} and \ref{zaurus:msgs}.
+
+            \subsubsection{Message Content}
+            The \emph{message content}
+            consists of a variable number of bytes which directly
+            follow the \emph{message type}. This is the data that goes
+            along with the specified \emph{message type}.
+            
+        \subsection{Message Checksum}
+
+        The \emph{message checksum} is the summation of each byte within
+        the \emph{message body}. It is represented as two bytes in the
+        little endian byte order. In practice the byte order should only be
+        swapped if your box is a big endian box.
+        For more information on little endian refer to section
+        \ref{qtopia:msgheader}.
+
+        \begin{verbatim}
+        [ Remainder (lsb) ] [ 256s Counter (msb) ]
+        \end{verbatim}
+
+    \section{Qtopia Desktop Messages}
+
+    \label{qtopia:msgs}
+    Within this protocol there exist a number of messages which only
+    originate from Qtopia Desktop. I consider these Qtopia Desktop
+    originated messages \emph{Qtopia Desktop Messages}.
+
+        \subsection{RAY}
+
+            \subsubsection{Content}
+
+            The \emph{RAY} message contains no content.
+
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of a
+            message of type \emph{AAY}. This is the first message sent from
+            the Desktop synchronization software to the Zaurus after the
+            Zaurus connects to the Desktop synchronization software. It seems
+            that it is used for initiation of the synchronization.
+
+        \subsection{RIG}
+
+            \subsubsection{Content}
+
+            The \emph{RIG} message contains no content.
+
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to request general
+            information from the Zaurus (Model, Language, Auth State, etc) due
+            to the fact that it receives a \emph{AIG} message in response
+            which contains such information.
+
+        \subsection{RRL}
+
+            \subsubsection{Content}
+
+            The \emph{RRL} message contains the passcode that should be sent
+            to the Zaurus for authentication along with the size of the
+            passcode in bytes. The passcode size is represented by a single
+            byte preceding the password itself. The format of this message is
+            as follows:
+
+            \begin{verbatim}
+              [ Passcode Size (1 Byte) ] [ Passcode (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item Passcode Size (1 Byte) - This 1 byte represents the size of
+              the following passcode in bytes.
+
+            \item Passcode (X Bytes) - This variable number of bytes should
+              contain the passcode itself.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            This message is used to send the passcode to the Zaurus for
+            authentication before the Zaurus will allow synchronization to
+            happen. This message is only sent to the Zaurus if the
+            authentication state found in the \emph{AIG} message represents
+            that the passcode option is enabled on the Zaurus. Please refer to
+            \ref{zmsg:aig} for more info.
+
+            \subsubsection{Note}
+
+            This message is only needed if the passcode option on the Zaurus
+            is enabled.
+
+            \subsubsection{Security Note}
+
+            The passcode is passed in clear text. Hence, one should not
+            synchronize over public networks (or rather any place someone
+            could possibly sniff their traffic, such as a open wireless
+            network). Synchronizing using the cradle should not be a problem
+            unless your box is owned by someone else.
+
+        \subsection{RMG}
+
+            \subsubsection{Content}
+
+            The \emph{RMG} message contains two bytes of data, one of which
+            differs depending on the type of synchronization. The format of the
+            message is as follows.
+
+            \begin{verbatim}
+              [ UK (1 Byte) ] [ SYNC TYPE (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item UK (1 Byte) - The meaning of this one byte is unknown. It
+              has consistently been seen with a value of 0x01 in hex, despite
+              variables such as synchronization type, etc.
+
+            \item SYNC TYPE (1 Byte) - This byte represents the type of
+              synchronization that is occurring. The known values in hex are
+              as follows.
+
+              \synctypes
+
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to request the
+            synchronization log from the Zaurus or at least a signature of some
+            sort of the synchronization log. I make this assumption based on
+            the fact that this message receives a \emph{AMG} message in
+            response, and the \emph{AMG} message contains either the log or a
+            signature of it.
+
+        \subsection{RMS}
+
+            \subsubsection{Content}
+
+            The \emph{RMS} contains 40 bytes of data. There have been two
+            cases that have been seen. The first two bytes of data refer to
+            the size of the log file content. Unlike most messages if the log
+            content is less then 38 bytes of data it is padded with 0x00s to
+            be a total of 38 bytes of data.
+            
+            \subsubsection{Purpose}
+
+            This message is used when doing a \emph{full sync}, or rather
+            \emph{slow sync}. It sets the log file record kept on the
+            Zaurus. This message is different then most though. Before it can
+            be used to set the log file record on the Zaurus it has to be used
+            to signify that the log file record is going to be reset. This is
+            done by sending an \emph{RMS} message containing all 0x00 bytes as
+            its content. After sending such an \emph{RMS} message one should
+            receive an \emph{ANG} message containing a value of 0x83.
+
+            After it has been notified that it is going to reset the log
+            record another \emph{RMS} message should be sent to the Zaurus
+            containing the log record for the Zaurus to store.
+
+        \subsection{RSS}
+
+            \subsubsection{Content}
+
+            The \emph{RSS} message contains three bytes, one of which is the
+            the type of synchronization. The format is as follows:
+
+            \begin{verbatim}
+              [ UK (1 Byte) ] [ SYNC TYPE (1 Byte) ] [ UK (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item UK (1 Byte) - The meaning of this one byte is unknown. It
+              has consistently been seen with a value of 0x01 in hex, despite
+              variables such as synchronization type, etc.
+
+            \item SYNC TYPE (1 Byte) - This byte represents the type of
+              synchronization that is occurring. The known values in hex are
+              as follows.
+
+              \synctypes
+
+            \item UK (1 Byte) - The meaning of this one byte is unknown. It
+              has consistently been seen with a value of 0x01 in hex, despite
+              variables such as synchronization type, etc.
+
+            \end{enumerate}            
+
+            \subsubsection{Purpose}
+
+            This message looks to actually reset the state of items in the
+            database on the Zaurus so that they will be recognized as new
+            items.
+
+        \subsection{RTG}
+
+            \subsubsection{Content}
+
+            The \emph{RTG} message contains no content.
+            
+            \subsubsection{Purpose}
+
+            This message looks to be a request for the time stamp of the last
+            synchronization on the Zaurus due to the fact the the Zaurus
+            responds with an \emph{ATG} message.
+
+        \subsection{RTS}
+        
+            \subsubsection{Content}
+            
+            The \emph{RTS} contains the current time
+            of the Desktop box when sending the RTS message.
+            The content of this message includes the time stamp in the format
+            YYYYMMDDhhmmss in which each byte represents the ASCII value of
+            the appropriate digit.
+
+            \subsubsection{Purpose}
+
+            At this point it is assumed that the purpose of this message
+            is to notify the Zaurus of the time at which it was synchronized
+            so that its software can do some comparison as to which things
+            need to be synchronized as well as store it as an anchor for use
+            in the next synchronization.
+
+        \subsection{RDI}
+
+            \subsubsection{Content}
+
+            The \emph{RDI} contains two bytes, one of which differs depending
+            on the type of synchronization (the synchronization type
+            identifier). The format of the message is as follows.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - This byte represents the type of
+              synchronization that is occurring. The known values in hex are
+              as follows.
+
+              \synctypes
+
+            \item UK (1 Byte) - The meaning of this one byte is unknown. It
+              has consistently been seen with a value of 0x07 in hex, despite
+              variables such as synchronization type, etc.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of
+            message type \emph{ADI}. Due to the fact that the \emph{ADI}
+            message returns the format for the synchronization type, I assume
+            that the actual purpose of this message is to request the data
+            format for a specific type of synchronization (To-Do, Calendar,
+            Address Book).
+
+            \subsubsection{Note}
+
+            This message is usually used once and then the format is stored. If
+            the synchronization data is cleared or there are no items in the
+            synchronization the \emph{RDI} message is sent to obtain the
+            format for the synchronization.
+
+        \subsection{RSY}
+
+            \subsubsection{Content}
+
+            The \emph{RSY} contains two bytes, one of which differs depending
+            on the type of synchronization (the synchronization type
+            identifier). The format of the message is as follows.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - This byte represents the type of
+              synchronization that is occurring. The known values in hex are
+              as follows.
+
+              \synctypes
+
+            \item UK (1 Byte) - The meaning of this one byte is unknown. It
+              has consistently been seen with a value of 0x07 in hex, despite
+              variables such as synchronization type, etc.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of
+            message type \emph{ASY}. Since the \emph{ASY} message returns a
+            list of synchronization IDs associated with items that need to be
+            synchronized (new, deleted, or modified). I naturally assume that
+            this message is a request for a list of all the synchronization
+            IDs of items in a specific type (To-Do, Calendar, Address Book)
+            that need to be synchronized.
+
+            \subsubsection{Note}
+
+            This message is used right before the actual content being
+            synchronized is sent over. Notice that the two bytes seem to match
+            with the two bytes sent over in the \emph{RDI}
+            message. Specifically the unknown byte.
+
+        \subsection{RDR}
+
+            \subsubsection{Content}
+
+            The \emph{RDR} contains a synchronization ID and some other bytes
+            that are unknown as of this point. Below is the format for the
+            body of the message as I know it (LOFD = length of following data,
+            UK = unknown).
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - This byte represents the type of
+              synchronization that is occurring. The known values in hex are
+              as follows.
+
+              \synctypes
+
+            \item NUM SYNC IDs (2 Bytes) - These two bytes I believe represent
+              the number of synchronization IDs that follow. \emph{Note: I
+              have only ever seen 1 synchronization ID follow.} Hence, the
+              value of this data should be 1 when interpreted as a little
+              endian unsigned integer.
+
+            \item SYNC ID (4 Bytes) - These four bytes contain the
+            synchronization ID of the item which this message is requesting
+            the data for. It is a 4 byte integer in little endian byte order.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of
+            message type \emph{ADR}. This message basically seems to be a
+            request for data on a specific item given the items associated
+            synchronization ID and the type of synchronization.
+
+            \subsubsection{Note}
+
+            A series of these messages are usually sent to the Zaurus to
+            request the data for each of the synchronization IDs that was
+            received in the a previous \emph{ASY} message.
+
+        \subsection{RDW}
+
+            \subsubsection{Variations}
+
+            The \emph{RDW} message has 3 different variations that I have
+            seen. The first variation is seen when items that exist on both
+            the Zaurus and the Desktop synchronization software are modified
+            on the Desktop synchronization software side. When the next
+            synchronization is performed a variation of the \emph{RDW} message
+            is sent to the Zaurus for each item that has been modified.
+
+            The second and third variations are both used when an item has
+            been added to the Desktop synchronization software but has not
+            been synchronized with the Zaurus yet. The first of these
+            variations is used to acquire a synchronization ID for the new
+            item. Once the synchronization ID has been acquired the second
+            variation is used to send the item specific data (Category, Notes,
+            Desc, etc.) to the Zaurus.
+
+            \subsubsection{Content}
+
+            The first of the 3 variations, the modified item variation,
+            contains both content that is generic to all types of
+            synchronization (To-do, Calender, Address) as well as content that
+            is specific to the type of synchronization. The content is
+            described in the following format. (LOFD = length of following
+            data, UK = unknown).
+
+            Below is the format for the generic content of the \emph{RDW}
+            message.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (2 Bytes) ]
+              [ Sync ID - SYID (4 Bytes) ]
+              [ UK (16 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+
+            \item UK (2 Bytes) - These two bytes have an unknown meaning. They
+              have consistently been seen to have the values 0x01 0x00 in
+              hex. This value holds despite the type of synchronization. It
+              may represent the number of items to be modified that are
+              contained within the message. However, I have done some testing
+              for this and have run into getting failure responses from the
+              Zaurus when trying to send multiple within one message. Beyond
+              that I have only seen a message modify one item at a time in
+              working synchronizations.
+
+            \item Sync ID - SYID (4 Bytes) - Is 4 bytes of data representing
+              the synchronization ID associated with the item that this
+              message should modify. It is a 4 byte unsigned integer in little
+              endian byte order.
+
+            \item UK (16 Bytes) - These 16 bytes have an unknown
+              meaning. Each of these 16 bytes has consistently been seen to
+              have  a value of 0xff in hex. These values hold despite type of
+              synchronization. At this point I am just assuming that these 16
+              bytes are used as some sort of separation buffer.
+            \end{enumerate}
+
+            The following format is the synchronization type specific data
+            format.
+
+            Below is format for the To-do type of synchronization.
+
+            \begin{verbatim}
+              [ LOFD (4 Bytes) ] [ Category - CTGR (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Start Date - ETDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Due Date - ITDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Completed Date - FNDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Progress Status - MARK (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Priority - PRTY (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Description - TITL (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Notes - MEM1 (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item Category - CTGR (X Bytes) - Is the category associated
+              with the To-Do item. It is a byte array of the ASCII values that
+              make up the Category.
+
+              \item Start Date - ETDY (5 Bytes) - Is the time at which the
+              To-Do item has as its start date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Due Date - ITDY (5 Bytes) - Is the time the To-Do item has
+              as its due date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Completed Date - FNDY (5 Bytes) - Is the time the To-Do
+              item has as its completed date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Progress Status - MARK (1 Byte) - Is a single byte that
+              represents the progress status of the To-Do item. If the To-Do
+              item is completed then it is a value of 0. If the To-Do item is
+              NOT completed then it is a value of 1.
+
+              \item Priority - PRTY (1 Byte) - Is a single byte that
+              represents the priority associated with the To-Do item. The value
+              can range from 1 to 5 with 1 being the highest priority and 5
+              being the lowest priority.
+
+              \item Description - TITL (X Bytes) - Is a UTF-8 string of the
+              Description associated with the To-Do item. It is a byte array of
+              the UTF-8 values that make up the Description.
+
+              \item Notes - MEM1 (X Bytes) - Is a UTF-8 string of the Notes
+              associated with the To-Do item. It is a byte array of the UTF-8
+              values that make up the Description.
+            \end{enumerate}
+
+            The second of the 3 variations, the obtain new sync ID variation,
+            is used to obtain a new sync ID for new items on the Desktop
+            synchronization software side. It's content is represented by the
+            following format.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (2 Bytes) ]
+              [ UK (4 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Attribute - ATTR (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+
+            \item UK (2 Bytes) - These two bytes have an unknown meaning. They
+              have consistently been seen to have the values 0x01 0x00 in
+              hex. This value holds despite the type of synchronization. It
+              may represent the number of items to be modified that are
+              contained within the message. However, I have done some testing
+              for this and have run into getting failure responses from the
+              Zaurus when trying to send multiple within one message. Beyond
+              that I have only seen a message modify one item at a time in
+              working synchronizations.
+
+            \item UK (4 Bytes) - These four bytes have an unknown
+              meaning. They have consistently been seen to have the values of
+              0x00 in hex. The values hold despite synchronization type. My
+              assumption at this point is that it might represent the
+              Synchronization ID and given that it is a value of 0 tells the
+              Zaurus that it is a request for a new item. Hence, a new
+              synchronization ID.
+
+            \item LOFD (4 Bytes) - These four bytes represent the length of
+            the following data in bytes. In this case since the Attribute
+            field is the following data and the Attribute field only takes up
+            one byte. This should have a value of 1 as far as I know.
+
+            \item Attribute - ATTR (1 Byte) - This one byte is an attribute
+              identifier. I have only seen it with a value of 0x00 in hex.
+            \end{enumerate}
+
+            The third of the 3 variations, the new item variation, is used to
+            send a new Desktop synchronization software item data to the
+            Zaurus so that it can be added to the proper database on the
+            Zaurus. It's content is composed of two sections. One section
+            which is generic to the type of synchronization and one that is
+            specific to the type of the synchronization. The generic sections
+            content is represented by the following format. 
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (2 Bytes) ]
+              [ UK (4 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Attribute - ATTR (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Card Created Date Time - CTTM (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Card Mod Date Time - MDTM (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Sync ID - SYID (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+
+            \item UK (2 Bytes) - These two bytes have an unknown meaning. They
+              have consistently been seen to have the values 0x01 0x00 in
+              hex. This value holds despite the type of synchronization. It
+              may represent the number of items to be modified that are
+              contained within the message. However, I have done some testing
+              for this and have run into getting failure responses from the
+              Zaurus when trying to send multiple within one message. Beyond
+              that I have only seen a message modify one item at a time in
+              working synchronizations.
+
+            \item UK (4 Bytes) - These four bytes have an unknown
+              meaning. They have consistently been seen to have the values of
+              0x00 in hex. The values hold despite synchronization type. My
+              assumption at this point is that it might represent the
+              Synchronization ID and given that it is a value of 0 tells the
+              Zaurus that it is a request for a new item. Hence, a new
+              synchronization ID.
+
+            \item LOFD (4 Bytes) - These for bytes represent the length of the
+              following data in bytes. In this case they are representing the
+              length of the Attribute data, which is only one byte. Hence,
+              these for bytes when interpreted as an unsigned long integer in
+              little endian byte order should have a value of 1.
+
+            \item Attribute - ATTR (1 Byte) - This one byte is an attribute
+              identifier. I have only seen it with a value of 0x00 in hex.
+
+            \item LOFD (4 Bytes) - These four bytes represent the length of
+              the following data in bytes. In this case they are representing
+              the length of the Card Created Date Time field. Since this is a
+              new item to the Zaurus we do not want to specify a Card Created
+              Date Time field. Hence, the value of these four bytes should be
+              0.
+
+            \item Card Created Date Time - CTTM (5 Bytes) - If the previous
+              LOFD contains a value of 5 then this represents the date and time
+              at which the card was created. If the LOFD contains a value of 0,
+              which it should in this case, then these 5 bytes do not exist and
+              the format continues.
+
+            \item LOFD (4 Bytes) - These four bytes represent the length of
+              the following data in bytes. in this case they are representing
+              the length of the Cord Mod Date Time field. Since this is a new
+              item to the Zaurus we do not want to specify a Card Mod Date
+              Time field. Hence, the value of these four bytes should be 0.
+
+            \item Card Mod Date Time - MDTM (5 Bytes) - If the previous LOFD
+              contains a value of 5 then this represents the date and time at
+              which the card was last modified. If the LOFD contains a value
+              of 0, which it should in this case, then these 5 bytes do not
+              exist and the format continues.
+
+            \item LOFD (4 Bytes) - These four bytes represent the length of
+              the following data in bytes. In this case they are representing
+              the length of the Sync ID field. Since the Sync ID field contains
+              only one Sync ID, and a Sync ID is an unsigned long integer,
+              this should have a value of 4.
+
+            \item Sync ID - SYID (4 Bytes) - Is 4 bytes of data representing
+              the synchronization ID associated with the item that this
+              message should create. It is a 4 byte unsigned integer in little
+              endian byte order.
+            \end{enumerate}
+
+            The following format is the synchronization type specific data
+            format.
+
+            Below is format for the To-do type of synchronization.
+
+            \begin{verbatim}
+              [ LOFD (4 Bytes) ] [ Category - CTGR (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Start Date - ETDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Due Date - ITDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Completed Date - FNDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Progress Status - MARK (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Priority - PRTY (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Description - TITL (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Notes - MEM1 (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item Category - CTGR (X Bytes) - Is the category associated
+              with the To-Do item. It is a byte array of the ASCII values that
+              make up the Category.
+
+              \item Start Date - ETDY (5 Bytes) - Is the time at which the
+              To-Do item has as its start date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Due Date - ITDY (5 Bytes) - Is the time the To-Do item has
+              as its due date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Completed Date - FNDY (5 Bytes) - Is the time the To-Do
+              item has as its completed date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of the
+              \emph{ADR} message. This is NULL if the date is not set.
+
+              \item Progress Status - MARK (1 Byte) - Is a single byte that
+              represents the progress status of the To-Do item. If the To-Do
+              item is completed then it is a value of 0. If the To-Do item is
+              NOT completed then it is a value of 1.
+
+              \item Priority - PRTY (1 Byte) - Is a single byte that
+              represents the priority associated with the To-Do item. The value
+              can range from 1 to 5 with 1 being the highest priority and 5
+              being the lowest priority.
+
+              \item Description - TITL (X Bytes) - Is a UTF-8 string of the
+              Description associated with the To-Do item. It is a byte array of
+              the UTF-8 values that make up the Description.
+
+              \item Notes - MEM1 (X Bytes) - Is a UTF-8 string of the Notes
+              associated with the To-Do item. It is a byte array of the UTF-8
+              values that make up the Description.
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            This message is a request for data writing. It seems that the
+            purpose of this message is to send data from the Desktop to the
+            Zaurus to have it either create or modify an item. It is used to
+            transfer data in the synchronization process. It receives an
+            \emph{ADW} message in response.
+
+            \subsubsection{Note}
+
+            This message only contains data for one item. If a number of items
+            are to be written a number of these messages are sent.
+
+        \subsection{RDD}
+
+            \subsubsection{Content}
+
+            The \emph{RDD} message contains a synchronization type identifier
+            and a synchronization ID. The specific format of the message is as
+            follows.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+
+            \item NUM SYNC IDs (2 Bytes) - These two bytes seem to represent
+              the number of synchronization IDs following. This is
+              consistently a value of 1 though. This is due to the fact that I
+              have only ever seen 1 synchronization ID follow. If multiple
+              items need to be deleted then multiple \emph{RDD} messages are
+              sent.
+
+            \item SYNC ID (4 Bytes) - These four bytes contain the
+              synchronization ID of the item this message is requesting be
+              deleted from the Zaurus database.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message is to provide a method for the desktop
+            synchronization application to notify the Zaurus that an item
+            needs to be deleted due to synchronization, and the specific one
+            that does.
+
+        \subsection{RDS}
+
+            \subsubsection{Content}
+
+            The \emph{RDS} message contains a synchronization type identifier
+            followed by three bytes of data. The format of the message is as
+            follows.
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ] [ UK (3 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+
+            \item UK (3 Bytes) - These three bytes have unknown meaning. They
+              have consistently been seen as having the following values.
+
+              \begin{verbatim}
+                hex: 0x07 0x00 0x00
+              \end{verbatim}
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of
+            message type \emph{AEX}. This message is sent to state that the
+            synchronization has been successfully performed.
+
+            \subsubsection{Note}
+
+            This first two bytes of data seem to be the same two
+            bytes that appear in the \emph{RSY} and \emph{RDI}
+            messages. Specifically the 0x07.
+
+        \subsection{RQT}
+
+            \subsubsection{Content}
+
+            The \emph{RQT} contains three bytes of data which don't seem to
+            change.
+
+            \begin{verbatim}
+               ascii: NUL NUL NUL
+                 dec: 0   0   0
+                 hex: 00  00  00
+            \end{verbatim}
+            
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to get a response of
+            message type \emph{AEX}. It also seems that this message initiates
+            the connection termination on the Zaurus side.
+
+        \subsection{RLR}
+
+            \subsubsection{Content}
+
+            The \emph{RLR} message contains one byte which represents the type
+            of synchronization. The message format looks as follows:
+
+            \begin{verbatim}
+              [ SYNC TYPE (1 Byte) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SYNC TYPE (1 Byte) - Is a 1 byte identifier used to specify
+              the type of synchronization. The known values are as 
+              follows in hex.
+
+              \synctypes
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The purpose of the \emph{RLR} message seems to be to make a
+            request for a listing of \emph{all} of the synchronization IDs
+            (DTM IDs) of items associated with the specified synchronization
+            type. It receives a \emph{ALR} message in response.
+
+        \subsection{RGE}
+
+            \subsubsection{Content}
+
+            The \emph{RGE} message contains 2 bytes which contain the length
+            of the following string, followed by X number of bytes which make
+            up the path to one of the DTM index or box files on the
+            Zaurus. The format looks as follows.
+
+            \begin{verbatim}
+              [ LOFS (2 Bytes) ] [ FILE PATH (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item LOFS (2 Bytes) - This should be the length of the
+              following string in bytes. It is represented in little endian
+              byte order.
+
+              \item FILE PATH (X Bytes) - This is a string which represents a
+              fully qualified path to a DTM index or box file. The file path
+              seems to be one of the following:
+
+              \begin{enumerate}
+                \item /home/zaurus/Applications/dtm/SLTODO.BOX - This is the
+                path to the To-Do Application's DTM box file.
+
+                \item /home/zaurus/Applications/dtm/SLTODO.IDX - This is the
+                path to the To-Do Application's DTM index file.
+
+                \item /home/zaurus/Applications/dtm/SLFLER.BOX - This is the
+                path to the Category DTM box file.
+
+                \item /home/zaurus/Applications/dtm/SLFLER.IDX - This is the
+                path to the Category DTM index file.
+              \end{enumerate}
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to request the content of
+            either a DTM index file or a DTM box file. The content of either
+            of those two types is returned in one or more \emph{AGE} messages.
+
+            \subsubsection{Notes}
+
+            This message type is only used in the initial synchronization to
+            set the synchronization state. It is NOT used in synchronizations
+            of items after the synchronization state has been set. This is
+            used to take the current state of the Zaurus DTM database and
+            basically move it over to the Desktop and move the Desktop
+            database over to the Zaurus. After this initial synchronization
+            has been performed the protocol only synchronizes the items which
+            need to be synchronized.
+
+    \section{Zaurus Messages}
+
+    \label{zaurus:msgs}
+    There also exist a number of messages in this protocol which originate
+    from the Zaurus. I consider these Zaurus originated messages
+    \emph{Zaurus Messages}.
+
+        \subsection{AAY}
+
+            \subsubsection{Content}
+
+            The \emph{AAY} contains three bytes which as of now are as
+            follows (they have not changed):
+
+            \begin{verbatim}
+              ascii: NUL DLE NUL
+                dec: 0   16  0
+                hex: 00  10  00
+            \end{verbatim}
+
+            \subsubsection{Purpose}
+
+            At this point due to my lack of knowledge I know that it is a
+            response to the \emph{RAY} message but I am not sure as to what
+            the three bytes represent. Some more testing may produce some
+            results.
+
+        \subsection{AIG}
+        \label{zmsg:aig}
+            \subsubsection{Content}
+
+            The \emph{AIG} contains numerous pieces of data that we know of as
+            important data, such as the Zaurus model, language, authentication
+            state, etc. Below is the format for the body of the message as I
+            know it (LOFS = length of following string, UK = unknown).
+
+            \begin{verbatim}
+              [ LOFS (2 Bytes) ]
+              [ Model STR (X Bytes) ] [ UK (5 Bytes) ]
+              [ Language (2 Bytes) ] [ Auth State (1 Byte) ] [ UK (6 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item LOFS (2 Bytes) - These two bytes are the length of the
+              following string in bytes represented in little endian byte
+              order.
+
+              \item Model STR (X Bytes) - This is a string identifying the
+              model of the Zaurus. It should be LOFS bytes and in most cases
+              should consist of \emph{SL-5600}, \emph{SL-5500}, or
+              \emph{SL-6000}.
+
+              \item UK (5 Bytes) - These five bytes are unknown as to what
+              they represent. They have \emph{not} changed and appear as
+              follows (in hex):
+
+              \begin{verbatim}
+                0xff 0xff 0x31 0xff 0x20
+              \end{verbatim}
+
+              \item Language (2 Bytes) - These two bytes represent the
+              language of the Zaurus. In most cases this will be \emph{en} in
+              ASCII.
+
+              \item Auth State (1 Byte) - This byte as I know of represents
+              at least the authentication state. It seems to differ based on
+              the model of the Zaurus (SL-5500, SL-5600, SL-5500G). 
+
+              The values seen and their associated descriptions using the
+              Zaurus SL-5600 and SL-5500 are as follows:
+              \begin{itemize}
+                \item 0x08 - The password option is disabled on the Zaurus. 
+
+                \item 0x0b - The password option is enabled on the Zaurus and
+                this message is before authentication of the password has
+                occurred.
+
+                \item 0x09 - The password option is enabled on the Zaurus and
+                this message is after authentication of the password has
+                occurred.
+              \end{itemize}
+
+              The values seen and their associated descriptions using the
+              Zaurus SL-5500G are as follows:
+              \begin{itemize}
+                \item 0x04 - The password option is disabled on the Zaurus.
+
+                \item 0x07 - The password option is enabled on the Zaurus and
+                this message is before authentication of the password has
+                occurred.
+
+                \item 0x05 - The password option is enabled on the Zaurus and
+                this message is after authentication of the password has
+                occurred.
+              \end{itemize}
+
+              \item UK (6 Bytes) - These 6 bytes are unknown. They have not
+              changed through out the testing. The bytes values are as
+              follows (in hex):
+
+              \begin{verbatim}
+                0xff 0x00 0x00 0x00 0x00 0x00
+              \end{verbatim}
+
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            This message is a response to the \emph{RIG} message, and its
+            purpose is probably from what I have seen, simply, to provide the
+            synchronization software with some general information
+            about the Zaurus (Auth State, Model, Language, etc).
+
+        \subsection{AMG}
+
+            \subsubsection{Content}
+
+            The \emph{AMG} message looks to contain a large number of NULL
+            byte along with some other non NULL bytes. It seems to always
+            start with SL. I believe these bytes to represent the
+            synchronization log or at least a signature of the synchronization
+            log.
+
+            \subsubsection{Purpose}
+
+            It is a response to the \emph{RMG} message. Given that it contains
+            the synchronization log, I assume that the purpose is to is solely
+            to send the synchronization log to the Desktop synchronization
+            software.
+
+        \subsection{ATG}
+
+            \subsubsection{Content}
+
+            The \emph{ATG} message looks to contain the value of the
+            \emph{RTS} message that was received by the Zaurus the last time a
+            synchronization occurred. I assume that the Zaurus some how records
+            the last time that it was synchronized. The content of this message
+            includes the time stamp of the last \emph{RTS} message (the last
+            time it was synchronized) in the format YYYYMMDDhhmmss in which
+            each byte represents the ASCII value of the appropriate digit.
+
+            \subsubsection{Purpose}
+
+            I am unsure as to what the value of this message content is if it
+            has not been synchronized before but that will eventually be
+            figured out. It seems to be used just to tell the Desktop
+            synchronization software the last time it was synchronized.
+
+        \subsection{AEX}
+
+            \subsubsection{Content}
+
+            The \emph{AEX} message contains no content.
+
+            \subsubsection{Purpose}
+
+            I know that it is sent to the Desktop Synchronization software in
+            response to the \emph{RRL}, \emph{RTS}, \emph{RDS}, and \emph{RQT}
+            messages. It seems to be a statement of success.
+
+        \subsection{ANG}
+
+            \subsubsection{Content}
+
+            The \emph{ANG} message contains only one byte of content. It has
+            so far only been seen to be 0x83 in hex.
+
+            \subsubsection{Purpose}
+
+            The purpose of this message has not been determined yet. I know
+            that it is sent to the Desktop Synchronization software in
+            response to an \emph{RMS} message containing 40 bytes of
+            0x00s. This \emph{RMS} message seems to be used to state that the
+            Zaurus log record is going to be set.
+
+        \subsection{ADI}
+
+            \subsubsection{Content}
+
+            The \emph{ADI} message contains what seems to be the format of the
+            synchronization data in some aspect. Below is the format for the
+            content of the message as I know it. (LOFS = length of following
+            string, UK = unknown)
+
+            \begin{verbatim}
+              [ TOT NUM CARDS (4 Bytes) ]
+              [ NUM PARAMS PER CARD (2 Bytes) ] [ UK (1 Byte) ]
+              [ Y NUM DTM PARAMS (X Bytes) ]
+              [ PARAM DATA IDS (Y Bytes) ]
+              [ LOFS (2 Bytes) ] [ Desc Param 1 (X Bytes) ]
+              [ LOFS (2 Bytes) ] [ Desc Param 2 (X Bytes) ]
+              [ LOFS (2 Bytes) ] [ Desc Param . (X Bytes) ]
+              [ LOFS (2 Bytes) ] [ Desc Param . (X Bytes) ]
+              [ LOFS (2 Bytes) ] [ Desc Param Y (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item TOT NUM CARDS (4 Bytes) - These 4 bytes of data
+              represent the total number of cards existing in the box
+              (synchronization type) specified in the \emph{RDI} message. This
+              is represented as an unsigned long integer in little endian byte
+              order.
+
+              \item NUM PARAMS PER CARD (2 Bytes) - These 2 bytes of data
+              represent the number of parameters associated with each card of
+              this box (synchronization type) specified in the \emph{RDI}
+              message. This is represented as an unsigned short integer in
+              little endian byte order.
+
+              \item UK (1 Byte) - This 1 byte is unknown as to what it
+              represents. It seems to consistently have a value of 0x07 (hex).
+
+              \item Y NUM DTM PARAMS (X Bytes) - This is a listing
+              of the abbreviations of the parameters for the box
+              (synchronization type) specified in the \emph{RDI} message. It
+              should always consist of ATTRCTTMMDTMSYID, these are the 4 common
+              parameters that all items contain. Following these should be the
+              specific parameters for the type of synchronization. For example
+              with a To-Do it should be CTGRETDYITDYFNDYMARKPRTYTITLMEM1. This
+              represents all the To-Do  specific parameter abbreviations. Each
+              abbreviation is 4 characters so the first would be CTGR which
+              represents the Category. The second is ETDY which is the start
+              date. This is X number of bytes long because it is totally
+              dependent on Y (the number of DTM Parameters associated with the
+              type of synchronization). In fact, it should be Y * 4 since
+              there are 4 bytes (characters) per parameter.
+
+              \item PARAM DATA IDS (Y Bytes) - This is an associated list of
+              single byte identifiers which represent the  data types of the
+              above listed parameters. This section is Y bytes long because Y
+              represents the number of parameters associated with the
+              synchronization, and each parameters has a single byte
+              identifier associated with it. The identifiers are as follows
+              (in hex):
+
+              \begin{verbatim}
+                Strings in SJIS: 0x01
+                      Code Data: 0x01
+                     Image data: 0x02
+                    Hybrid text: 0x03
+                           Time: 0x04
+                          Hours: 0x05
+                            Bit: 0x06
+           Week/day of the week: 0x07
+                 Unsigned short: 0x08
+                           Word: 0x08
+                   Binary block: 0x09
+              Unsigned short GS: 0x0a
+                        Word GS: 0x0a
+                  Unsigned char: 0x0b
+                         BARRAY: 0x0c
+                     Color data: 0x0d
+                           SXLS: 0x0e
+                           SRTF: 0x0f
+               Strings in UTF-8: 0x11
+                  Unsigned Long: 0x12
+              \end{verbatim}
+
+              An example of the might look as follows:
+
+              \begin{verbatim}
+                0x06 0x04 0x04
+              \end{verbatim}
+
+              In the above example the 0x06 means that the ATTR parameter is
+              of type 0x06 which is a Bit, and that parameters CTTM and MDTM
+              are both of type 0x04 which is a Time entry.
+
+              \item LOFS (2 Bytes) - This should be the length of the
+              following string in little endian byte order.
+
+              \item Desc Param Y (X Bytes) - This is a description of the
+              parameter associated with it, based on position in the data,
+              hence the Y (parameter identifier) associated with it. It should
+              have an LOFS preceding it which specifies the length of it.
+
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            This message is a response to the \emph{RDI} message, and its
+            purpose is probably from what I have seen, simply, to provide the
+            synchronization software with the format for the up and coming
+            data.
+
+            \subsubsection{Note}
+
+            Since this is a response to an \emph{RDI} message and the
+            \emph{RDI} message is only used when the Desktop Synchronization
+            software needs to know the format, this message is not seen in
+            every synchronization.
+
+        \subsection{ASY}
+
+            \subsubsection{Content}
+
+            The \emph{ASY} message contains the synchronization IDs of all of
+            the items that should be synchronized (new, deleted, and
+            modified). Below is the format for the content of the message as I
+            know it. (LOFD = length of following data, UK = unknown)
+
+            \begin{verbatim}
+              [ UK (1 Byte) ]
+              [ Y NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID 1 (4 Bytes) ]
+              [ SYNC ID 2 (4 Bytse) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID Y (4 Bytes) ]
+              [ UK (1 Byte) ]
+              [ Y NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID 1 (4 Bytes) ]
+              [ SYNC ID 2 (4 Bytse) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID Y (4 Bytes) ]
+              [ UK (1 Byte) ]
+              [ Y NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID 1 (4 Bytes) ]
+              [ SYNC ID 2 (4 Bytse) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID . (4 Bytes) ]
+              [ SYNC ID Y (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item UK (1 Byte) - This one byte has been seen with a value of
+              1 consistently. I have yet to see it change values. At this
+              point I think it is just an identifier for the new item sync ID
+              list.
+
+              \item Y NUM SYNC IDs (2 Bytes) - These 2 bytes contain the
+              number of synchronization IDs that follow. It is an unsigned
+              short integer in little endian byte order.
+
+              \item SYNC ID Y (4 Bytes) - This is one of any number of
+              synchronization IDs that are listed in series. Each one is an
+              unsigned long integer in little endian byte order.
+
+              \item UK (1 Byte) - This one byte has been seen with a value of
+              2 consistently. I have yet to see it change values. At this
+              point I think it is just an identifier for the modified item
+              sync id list.
+
+              \item Y NUM SYNC IDs (2 Bytes) - These 2 bytes contain the
+              number of synchronization IDs that follow. It is an unsigned
+              short integer in little endian byte order.
+
+              \item SYNC ID Y (4 Bytes) - This is one of any number of
+              synchronization IDs that are listed in series. Each one is an
+              unsigned long integer in little endian byte order.
+
+              \item UK (1 Byte) - This one byte has been seen with a value of
+              4 consistently. I have yet to see it change values. At this
+              point I think it is just an identifier for the deleted item sync
+              id list.
+
+              \item Y NUM SYNC IDs (2 Bytes) - These 2 bytes contain the
+              number of synchronization IDs that follow. It is an unsigned
+              short integer in little endian byte order.
+
+              \item SYNC ID Y (4 Bytes) - This is one of any number of
+              synchronization IDs that are listed in series. Each one is an
+              unsigned long integer in little endian byte order.
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            This message is a response to the \emph{RSY} message. The purpose
+            of it is to provide the desktop synchronization software with a
+            lists of synchronization IDs associated with the items that need to
+            be synchronized (new, deleted, or modified).
+
+        \subsection{ADR}
+
+            \subsubsection{Content}
+
+            The \emph{ADR} message contains the data of an item that should be
+            synchronized. Below is the format for the body of the message as I
+            know it. (LOFD = length of following data, UK = unknown)
+
+            The format layout has two parts, a common portion and a
+            synchronization specific part. The common portion is a portion
+            that is shared among all synchronizations while the
+            synchronization specific part is specific to the type of
+            synchronization. The synchronization specific part follows the
+            common part in the message.
+
+            The common part of the format looks as follows.
+
+            \begin{verbatim}
+              [ UK (2 Bytes) ]
+              [ NUM PARAMS (2 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Attribute - ATTR (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Card Created Date Time - CTTM (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Card Mod Date Time - MDTM (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Sync ID - SYID (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+
+              \item UK (2 Bytes) - The meaning of these 2 bytes are unknown.
+              However, they do seem to consistently be the following 2 values
+              (in hex).
+
+              \begin{verbatim}
+                hex: 0x01 0x00
+              \end{verbatim}
+
+              The only thing I can think of, is that these two bytes may
+              represent the number of items that follow. Although, I have only
+              ever seen the data of 1 item be sent using this message. It
+              would also mean that the request message for this would require
+              a parameter to represent the number to request. Which it very
+              well may. I need to do further testing to figure this out.
+
+              \item NUM PARAMS (2 Bytes) - This seems to be the total number
+              of parameters associated with the item. In the case of To-do this
+              is always 0x0c 0x00. Rather 12 in decimal.
+
+              \item LOFD (4 Bytes) - Is the length of the following data in
+              bytes. It is 4 bytes in little endian byte order.
+
+              \item Attribute - ATTR (1 Byte) - Is a single byte which
+              represents the attribute. This seems to be 0 all of the time.
+
+              \item Card Created Date Time - CTTM (5 Bytes) - Is the time at
+              which the card was created. It is stored in 5 bytes in the
+              following format (left to right) when looking at it in big
+              endian byte order. \emph{Note:} The Zaurus sends it over in
+              little endian byte order. Also note that in this representation
+              the top item represents th left most field in the format. Also
+              note, on a system that is little endian, when you perform
+              bitwise operations (such as bit shifts) it assumes you are
+              thinking of the content in big endian. Henc, it will swap the
+              little endian bytes to big endian before it performs the bit
+              wise operation (such as bit shifts) and then swap the byte order
+              back to little endian.
+
+              \begin{verbatim}
+                unknown: 4 bits
+                   year: 8 bits
+                  month: 4 bits
+              month day: 5 bits
+                   hour: 5 bits
+                    min: 6 bits
+                   secs: 6 bits
+                unknown: 2 bits
+              \end{verbatim}
+
+              \begin{enumerate}
+              \item unknown - I am unsure of what these 4 bits represent.
+              \item year - This is the number of years since 1900.
+              \item month - The number of the month ranging from 1 to 12.
+              \item month day - The number representing day of month, 1 to 31.
+              \item hour - This is the hours in GMT time.
+              \item min - The number of minutes after the hour, 0 to 59.
+              \item secs - The number of seconds after the minute, 0 to 59 in
+              most cases. It could go up to 61 to account for leap seconds if
+              the Zaurus supports leap seconds.
+              \item unknown - I am unsure of what these 2 bits represent.
+              \end{enumerate}
+
+              This format provides all that is needed to create a calendar
+              time and date. Hence, I think the unknown bits are just
+              garbage bits. There is a possibility that the 4 bits preceding
+              the \emph{year} field could be part of the year. Without them
+              though the year field has a max value of 255. This limits the
+              year it represents to 2155. Considering that we are currently in
+              2004 I do not think this limitation will be a problem. Beyond
+              that the two bits have now changed but I have not narrowed down
+              exactly what caused the change and have yet to find a
+              significant reason to take note of the change.
+
+              \item Card Mod Date Time - MDTM (5 Bytes) - Is the time at
+              which the card was last modified. It is stored in 5 bytes in the
+              same format as the \emph{Card Created Date Time}.
+
+              \item Sync ID - SYID (4 Bytes) - This is a synchronization
+              identifier. It is 4 bytes and is an unsigned long integer in
+              little endian byte order.
+
+            \end{enumerate}
+
+            The synchronization specific portion for To-Do is as follows:
+
+            \begin{verbatim}
+              [ LOFD (4 Bytes) ] [ Category - CTGR (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Start Date - ETDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Due Date - ITDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Completed Date - FNDY (5 Bytes) ]
+              [ LOFD (4 Bytes) ] [ Progress Status - MARK (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Priority - PRTY (1 Byte) ]
+              [ LOFD (4 Bytes) ] [ Description - TITL (X Bytes) ]
+              [ LOFD (4 Bytes) ] [ Notes - MEM1 (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item Category - CTGR (X Bytes) - Is the category associated
+              with the To-Do item. It is a byte array of the ASCII values that
+              make up the Category.
+
+              \item Start Date - ETDY (5 Bytes) - Is the time at which the
+              To-Do item has as its start date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of this
+              message. This is non existent if the date is not set and the
+              preceding LOFD has a value of 0.
+
+              \item Due Date - ITDY (5 Bytes) - Is the time the To-Do item has
+              as its due date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of this
+              message. This is non existent if the date is not set and the
+              preceding LOFD has a value of 0.
+
+              \item Completed Date - FNDY (5 Bytes) - Is the time the To-Do
+              item has as its completed date. It is in the same format as the
+              \emph{Card Created Date Time} found in the common part of this
+              message. This is non existent if the date is not set and the
+              preceding LOFD has a value of 0.
+
+              \item Progress Status - MARK (1 Byte) - Is a single byte that
+              represents the progress status of the To-Do item. If the To-Do
+              item is completed then it is a value of 0. If the To-Do item is
+              NOT completed then it is a value of 1.
+
+              \item Priority - PRTY (1 Byte) - Is a single byte that
+              represents the priority associated with the To-Do item. The value
+              can range from 1 to 5 with 1 being the highest priority and 5
+              being the lowest priority.
+
+              \item Description - TITL (X Bytes) - Is a UTF-8 string of the
+              Description associated with the To-Do item. It is a byte array of
+              the UTF-8 values that make up the Description.
+
+              \item Notes - MEM1 (X Bytes) - Is a UTF-8 string of the Notes
+              associated with the To-Do item. It is a byte array of the UTF-8
+              values that make up the Description.
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            This message is a response to the \emph{RDR} message. It seems
+            that the purpose of this message is to provide the data for the
+            specified sync ID requested in the \emph{RDR} message.
+
+            \subsubsection{Note}
+
+            This message is sent as a response for every \emph{RDR} message
+            that was sent. Hence, each \emph{ADR} message only contains the
+            data for one item of type To-Do, Calendar, or Address Book.
+
+        \subsection{ADW}
+
+            \subsubsection{Content}
+
+            The \emph{ADW} message contents are in accordance with the
+            following format.
+
+            \begin{verbatim}
+              [ UK (4 Bytes) ] [ NUM IDs (2 Bytes) ] [ SYNC ID (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item UK (4 Bytes) - The meaning of these four bytes is
+              unknown. They have consistently been seen with the value of 0x00
+              in hex despite synchronization type or any other tested factors.
+              \begin{verbatim}
+                hex: 0x00 0x00 0x00 0x00
+              \end{verbatim}
+
+            \item NUM IDs (2 Bytes) - I believe these two bytes to represent
+              the number of synchronization IDs following. I believe this
+              despite the fact that I have only ever seen one synchronization
+              ID follow. Beyond that, these two bytes have always been seen to
+              have a value of 1 in little endian byte order.
+              \begin{verbatim}
+                hex: 0x01 0x00
+              \end{verbatim}
+
+            \item SYNC ID (4 Bytes) - These four bytes represent the
+              synchronization ID of the item that was just created or modified
+              by the previous \emph{RDW} message.
+            \end{enumerate}
+            
+            \subsubsection{Purpose}
+
+            The \emph{ADW} message is a message sent in response to an
+            \emph{RDW} message. As far as I know it signifies success of the
+            prior \emph{RDW} message.
+
+        \subsection{ALR}
+
+            \subsubsection{Content}
+            
+            The \emph{ALR} message contains two bytes representing the number
+            of synchronization (DTM IDs) following, followed by some number of
+            synchronization IDs (DTM IDs). If there are no items to be
+            synchronized for the specified type the message only contains
+            the 2 bytes representing the number of synchronization IDs
+            (zero in this case). The format looks as follows:
+
+            \begin{verbatim}
+              [ NUM SYNC IDs (2 Bytes) ]
+              [ SYNC ID 1 (4 Bytes) ] [ SYNC ID 2 (4 Bytes) ]
+              [ SYNC ID 3 (4 Bytes) ] [ SYNC ID X (4 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item NUM SYNC IDs (2 Bytes) - This is the number of
+              synchronization IDs that follow. It is an unsigned short integer
+              in little endian byte order.
+
+              \item SYNC ID X (4 Bytes) - Each of the SYNC IDs represents a
+                synchronization ID of an item that is going to be sent over
+                for the requested type of synchronization.
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            The \emph{ALR} message's purpose is to respond to a \emph{RLR}
+            message, containing all of the synchronization IDs (DTM IDs) of
+            the items that are going to be sent over given the type of
+            synchronization in the \emph{RLR} message.
+
+        \subsection{AGE}
+
+            \subsubsection{Content}
+
+            The \emph{AGE} message is different then most messages. It has two
+            different content layouts. One of layouts is for the \emph{first}
+            \emph{AGE} message received after sending an \emph{RGE}. The other
+            layout is for all \emph{AGE} message subsequent to the
+            \emph{first} \emph{AGE} message.
+
+            In the content layout for the \emph{first} \emph{AGE} message, the
+            message contains four bytes which contain the \emph{total length}
+            of file requested in the \emph{RGE} message, followed by X number
+            of bytes which make up either the total content/partial content of
+            either the DTM index file or the DTM box file requested. If the
+            message contains only a portion of the file content then other
+            \emph{AGE} messages should follow containing the rest of the file
+            data. The format looks as follows.
+
+            \begin{verbatim}
+              [ LOFD (4 Bytes) ] [ FILE DATA (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item LOFD (4 Bytes) - This is the total length of the file
+              requested in the previous \emph{RGE} message, in bytes.
+
+              \item FILE DATA (X Bytes) - This is the byte for byte data found
+              in the file located at the path that was passed over in the RGE
+              request message. This is as far as I have seen the content of
+              one of the DTM index or box files.
+            \end{enumerate}
+
+            In the other content layout, the message contains X number of
+            bytes which make up either the total content/partial content of
+            either the DTM index file or the DTM box file requested. If the
+            message contains only a portion of the file content then other
+            \emph{AGE} messages should follow containing the rest of the file
+            data. The format looks as follows.
+
+            \begin{verbatim}
+              [ FILE DATA (X Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+              \item FILE DATA (X Bytes) - This is the byte for byte data found
+              in the file located at the path that was passed over in the RGE
+              request message. This is as far as I have seen the content of
+              one of the DTM index or box files.
+            \end{enumerate}
+
+            \subsubsection{Purpose}
+
+            The purpose of this message seems to be to send the content of a
+            DTM index file or a DTM box file. This is done in response to a
+            \emph{RGE} message.
+
+            \subsubsection{Notes}
+
+            This message type is only used in the initial synchronization to
+            set the synchronization state. This method of sync is know as
+            \emph{Slow Sync} by the Sync-ML standard and as \emph{Full Sync} by
+            the Qtopia Desktop software. It is \emph{not} used in
+            synchronizations of items after the synchronization state has been
+            set.
+
+            \subsubsection{Security Note}
+            The limitations of this request have \emph{not} been tested. It is
+            possible that the access is \emph{not} limited and that this could
+            be abused to obtain certain files from a person's Zaurus.
+
+    \section{PIM Database Parameters}
+
+    Below is a table of all the PIM database parameters organized by
+    Application type. This table can be used as a guide for the datatypes of
+    the parameters as well as a quick reference for parameter content and
+    parameter IDs. The \emph{Application} column of the table contains the
+    name of the application (synchronization type) that the listed parameters
+    are used in. The \emph{Parameters} column of the table contains the
+    parameter IDs of all the different types of parameters. The \emph{Type}
+    column of the table specifies the datatype identifier for the data types
+    which are used to transfer each parameter. The \emph{Content} column
+    contains a basic description of what each parameter contains. The
+    \emph{Remarks} column contains things that should be noted for specific
+    parameters.
+
+\small
+\setlongtables
+    \begin{longtable}[c]{|l|l|l|p{3cm}|p{5cm}|}
+      \caption{PIM Database Parameters} \label{paramtable} \\
+      \hline
+      Applications & Parameters & Type & Content & Remarks \\
+      \hline
+      \endhead
+      \hline
+      \multicolumn{5}{|r|}{\small\slshape continued on next page} \\
+      \hline
+      \endfoot
+      \hline
+      \endlastfoot
+%        Applications & Parameters & Type & Content & Remarks \\
+        \hline
+        Common & ATTR & DATA\_ID\_BIT & Attribute & \\
+        & CTTM & DATA\_ID\_TIME & Card created date and time & UTC \\
+        & MDTM & DATA\_ID\_TIME & Card modified date and time & UTC \\
+        & SYID & DATA\_ID\_ULONG & 32bit sync ID & \\
+        \hline
+
+        Todo & CTGR & DATA\_ID\_BARRAY & Category & Category ID \\
+        & ETDY & DATA\_ID\_TIME & Start Date & UTC, NULL if the date is not
+        set (size in bytes = 0) \\
+        & LTDY & DATA\_ID\_TIME & Due Date & UTC, NULL if the date is not set
+        (size in bytes = 0) \\ 
+        & FNDY & DATA\_ID\_TIME & Completed Date & UTC, NULL if the date is
+        not set (size in bytes = 0) \\
+        & MARK & DATA\_ID\_UCHAR & Progress Status & Completed = 0, Incomplete
+        = 1 \\
+        & PRTY & DATA\_ID\_UCHAR & Priority & 1(very high) - 5(very low) \\
+        & TITL & DATA\_ID\_UTF8 & Description & \\
+        & MEM1 & DATA\_ID\_UTF8 & Notes & \\
+        \hline
+
+        Calendar & CTGR & DATA\_ID\_BARRAY & Categar & Category ID \\
+        & DSRP & DATA\_ID\_UTF8 & Description & \\
+        & PLCE & DATA\_ID\_UTF8 & Location & \\
+        & MEM1 & DATA\_ID\_UTF8 & Notes & \\
+        & TIM1 & DATA\_ID\_TIME & Start Time & UTC, except All Day events are
+        Zaurus local time \\
+        & TIM2 & DATA\_ID\_TIME & End Time & UTC, except All Day events are
+        Zaruus local time \\
+        & ADAY & DATA\_ID\_UCHAR & Schedule Type & Normal = 0, All Day = 1 \\
+        & ARON & DATA\_ID\_UCHAR & Alarm & On = 0, Off = 1 \\
+        & ARMN & DATA\_ID\_WORD & Alarm time & As minutes \\
+        & ARSD & DATA\_ID\_UCHAR & Alarm Setting & Silent = 0, Loud = 1 \\
+        & RTYP & DATA\_ID\_UCHAR & Repeat type & Daily=0, Weekly=1,
+        MonthlyDay=2, MonthlyDate=3, YearlyDate=4, Set 0xff in non-repeat \\
+        & RFRQ & DATA\_ID\_WORD & Repeat period & \\
+        & RPOS & DATA\_ID\_WORD & Repeat position & \\
+        & RDYS & DATA\_ID\_UCHAR & Repeat date & MON=0x01, TUE=0x02, WED=0x04,
+        THU=0x08, FRI=0x10, SAT=0x20, SUN=0x40 \\        
+        & REND & DATA\_ID\_UCHAR & Repeat end date setting & Not Set = 0,
+        Set = 1 \\
+        & REDT & DATA\_ID\_TIME & Repeat end date & Not UTC \\
+        & ALSD & DATA\_ID\_TIME & All Day start date & Zaurus Local Time, only
+        date valid, time is garbage \\
+        & ALED & DATA\_ID\_TIME & All Day end date & Zaurus Local Time, only
+        date valid, time is garbage \\
+        & MDAY & DATA\_ID\_UCHAR & Multiple days flag & Same Day = 0, Multiple
+        Days = 1 \\
+        \hline
+        Addressbook & CTGR & DATA\_ID\_BARRAY & Category & Category ID \\
+        & FULL & DATA\_ID\_UTF8 & Full name & Used in List view. \\
+        & NAPR & DATA\_ID\_UTF8 & Full name pronunciation & \\
+        & TITL & DATA\_ID\_UTF8 & Term of respect & \\
+        & LNME & DATA\_ID\_UTF8 & Last name & \\
+        & FNME & DATA\_ID\_UTF8 & First name & \\
+        & MNME & DATA\_ID\_UTF8 & Middle name & \\
+        & SUFX & DATA\_ID\_UTF8 & Suffix & \\
+        & FLAS & DATA\_ID\_UTF8 & Alternative name & \\
+        & LNPR & DATA\_ID\_UTF8 & Last name pronunciation & \\
+        & FNPR & DATA\_ID\_UTF8 & First name pronunciation & \\
+        & CPNY & DATA\_ID\_UTF8 & Company & \\
+        & CPPR & DATA\_ID\_UTF8 & Company pronunciation & \\
+        & SCTN & DATA\_ID\_UTF8 & Department & \\
+        & PSTN & DATA\_ID\_UTF8 & Job title & \\
+        & TEL2 & DATA\_ID\_UTF8 & Work phone & \\
+        & FAX2 & DATA\_ID\_UTF8 & Work FAX & \\
+        & CPS2 & DATA\_ID\_UTF8 & Work mobile & \\
+        & BSTA & DATA\_ID\_UTF8 & Work state & \\
+        & BCTY & DATA\_ID\_UTF8 & Work city & \\
+        & BSTR & DATA\_ID\_UTF8 & Work street & \\
+        & BZIP & DATA\_ID\_UTF8 & Work Zip & \\
+        & BCTR & DATA\_ID\_UTF8 & Work country & \\
+        & BWEB & DATA\_ID\_UTF8 & Work web page & \\
+        & OFCE & DATA\_ID\_UTF8 & Office & \\
+        & PRFS & DATA\_ID\_UTF8 & Profession & \\
+        & ASST & DATA\_ID\_UTF8 & Assistant & \\
+        & MNGR & DATA\_ID\_UTF8 & Manager & \\
+        & BPGR & DATA\_ID\_UTF8 & Pager & \\
+        & CPS1 & DATA\_ID\_UTF8 & Cellular & \\
+        & TEL1 & DATA\_ID\_UTF8 & Home phone & \\
+        & FAX1 & DATA\_ID\_UTF8 & Home FAX & \\
+        & HSTA & DATA\_ID\_UTF8 & Home state & \\
+        & HCTY & DATA\_ID\_UTF8 & Home city & \\
+        & HSTR & DATA\_ID\_UTF8 & Home street & \\
+        & HZIP & DATA\_ID\_UTF8 & Home Zip & \\
+        & HCTR & DATA\_ID\_UTF8 & Home country & \\
+        & HWEB & DATA\_ID\_UTF8 & Home web page & \\
+        & DMAL & DATA\_ID\_UTF8 & Default email & First email in Emails \\
+        & MAL1 & DATA\_ID\_UTF8 & Emails & Space seperated list \\
+        & SPUS & DATA\_ID\_UTF8 & Spouse & \\
+        & GNDR & DATA\_ID\_UTF8 & Gender & \\
+        & BRTH & DATA\_ID\_UTF8 & Birthday & \\
+        & ANIV & DATA\_ID\_UTF8 & Anniversary & \\
+        & NCNM & DATA\_ID\_UTF8 & Nickname & \\
+        & CLDR & DATA\_ID\_UTF8 & Children & \\
+        & MEM1 & DATA\_ID\_UTF8 & Memo & \\
+        & GRPS & DATA\_ID\_UTF8 & Group & \\
+        \hline
+        Memo & CLAS & DATA\_ID\_UTF8 & List view title & 20 chars from
+        Description \\
+        & MEM1 & DATA\_ID\_UTF8 & Description & \\
+        & DATE & DATA\_ID\_TIME & Last modifide date & UTC \\
+        \hline
+        Email & MLID & DATA\_ID\_USHORT & Mail ID & \\
+        & SIZE & DATA\_ID\_USHORT & Mail size & \\
+        & TYPE & DATA\_ID\_UCHAR & Mail type & \\
+        & RDCK & DATA\_ID\_UCHAR & Read/Unread & \\
+        & DLCK & DATA\_ID\_UCHAR & Server download & \\
+        & DECK & DATA\_ID\_UCHAR & Server delete & \\
+        & SVID & DATA\_ID\_TEXT & Server ID & \\
+        & SDCK & DATA\_ID\_UCHAR & Sent/Not sent yet & \\
+        & MDCK & DATA\_ID\_UCHAR & Modified/Not modified & \\
+        & DRFT & DATA\_ID\_UCHAR & Draft email & \\
+        & ACNM & DATA\_ID\_TEXT & Account & \\
+        & MLBX & DATA\_ID\_TEXT & Mail box & \\
+        & RVTM & DATA\_ID\_TIME & Received date & \\
+        & SDTM & DATA\_ID\_TIME & Sent date & \\
+        & TMZN & DATA\_ID\_TEXT & Timezone & \\
+        & FMNM & DATA\_ID\_TEXT & Sender & \\
+        & FMAD & DATA\_ID\_TEXT & Sender's email address & \\
+        & MLTO & DATA\_ID\_TEXT & Destination TO email address & \\
+        & MLCC & DATA\_ID\_TEXT & Destination CC email address & \\
+        & MLBC & DATA\_ID\_TEXT & Destination BCC email address & \\
+        & MLRP & DATA\_ID\_TEXT & Replying email address & \\
+        & SBJT & DATA\_ID\_TEXT & Subject & \\
+        & BODY & DATA\_ID\_TEXT & Email body & \\
+        & ENNM & DATA\_ID\_USHORT & Number of attachement(s) & \\
+        & ENAT & DATA\_ID\_TEXT & Email attachement attribute & \\
+        & ENTP & DATA\_ID\_TEXT & Email attachement file type & \\
+        & ENFL & DATA\_ID\_TEXT & Attachement file name (full path) & \\
+        & DMMY & DATA\_ID\_TEXT & Dummy & \\
+        \hline
+        Category & TITL & DATA\_ID\_UTF8 & Category title & \\
+        & SCTG & DATA\_ID\_CATEGORY & Category ID & See TYPE fields to
+        determine if it is a preset category or not \\
+        & TYPE & DATA\_ID\_BIT & Attribute & bit7 (0x80) represents preset
+        category \\
+        & COLR & DATA\_ID\_COLOR & Book color & Not used \\
+        \hline
+    \end{longtable}
+
+\normalsize
+    \subsection{Datatype Descriptions}
+    \label{type:desc}
+    Below exist detailed descriptions of all the different datatype
+    identifiers used in the \emph{PIM Database Parameters} table.
+
+    \begin{enumerate}
+    \item DATA\_ID\_BIT - This data type is stored within 1 byte. Thus far I
+    have only seen it with values of 1 or 0, assumingly representing true and
+    false.
+
+    \item DATA\_ID\_TIME - This data type is stored within 5 bytes and is
+    transmitted from the Zaurus in little endian byte order. This data type is
+    used to represent date, time, or the combination of the two. Despite the
+    fact that it is transmitted in little endian, it must be in big endian byte
+    order to decompose it. In big endian byte order the format is as follows
+    (left to right):
+
+\begin{verbatim}
+                unknown: 4 bits
+                   year: 8 bits
+                  month: 4 bits
+              month day: 5 bits
+                   hour: 5 bits
+                    min: 6 bits
+                   secs: 6 bits
+                unknown: 2 bits
+\end{verbatim}
+
+    \item DATA\_ID\_ULONG - This data is stored in 4 bytes and is transmitted
+    from the Zaurus in little endian byte order. This data type is used to
+    represent the synchronization ID of an item and possibly other things.
+
+    \item DATA\_ID\_BARRAY - This data is stored in X number of bytes. The X
+    number of bytes are transmitted as an array of bytes. This data type is
+    used to represent the category of an item. The byte array only consists of
+    ASCII charactoers. This byte array represents the ID of the category an
+    item is associated with.
+
+    \item DATA\_ID\_UCHAR - This data is stored within 1 byte. It represents
+    an unsigned char and can be represented as an unsigned char in C or
+    C++. It is used to represent a number of things such as state of options,
+    priority level, repeat type, etc.
+
+    \item DATA\_ID\_UTF8 - This data is stored within X number of bytes. The X
+    number of bytes are transmitted as UTF8 data. This data type used to
+    transfer data for such things as Description, Location, Notes, etc.
+
+    \item DATA\_ID\_WORD - This data is stored within 2 bytes and is
+    transmitted from the Zaurus in little endian byte order. This data type is
+    used to represent alarm time (in minutes), repeat period, repeat position,
+    etc.
+
+    \end{enumerate}
+
+    \subsection{Parameter Exceptions}
+
+    The information provided in Table \ref{paramtable} is quite extensive,
+    however it does not cover some specific data handeling specifications due
+    to the limited remarks space. Such needed specifications are duly place in
+    this section to allow for the depth of description needed.
+
+    \subsubsection{Calendar Parameter Exceptions}
+
+    \begin{enumerate}
+      \item TIM1, TIM2 - The \emph{TIM1} and \emph{TIM2} parameters are used
+      to represent the Start Date and Time and End Date and Time of an
+      event. Normally, when an event is \emph{NOT} set as an \emph{All Day}
+      event \emph{TIM1} and \emph{TIM2} contain the date and time in
+      UTC. However, if the event is marked as an \emph{All Day} event
+      \emph{TIM1} and \emph{TIM2} contain the date and time in the Zaurus
+      local time. This limits how \emph{All Day} events can be mapped when
+      synchronizing. For the desktop synchronization software to be able to
+      properly convert from the Zaurus local time it would have to know what
+      the timezone setting of the Zaurus is. Given that the desktop software
+      does \emph{NOT} know the Zaurus timezone setting the software must use
+      the date as passed without converting it. This would make it show up as
+      filling the same date as on the Zaurus. However, the times wolud be off
+      by the timezone difference. Most people prefer this over the correct
+      way. However, if the developers of the Zaurus synchronization software
+      were intelligent they would have passed it over as UTC rather than local
+      time so that it could be used in either of the above described manners.
+
+      \item ALSD, ALED - The \emph{ALSD} and \emph{ALED} parameters are used
+      to represent the \emph{All Day Start Date} and \emph{All Day End Date}
+      of an event. These fields are redundent and contain the same date
+      information as the \emph{TIM1} and \emph{TIM2} parameters when an event
+      is marked as an \emph{All Day} event. The difference is that the date is
+      the only valid portion of these \emph{DATA\_ID\_TIME} parameters. The
+      time portion is just random garbage and should be ignored.
+    \end{enumerate}
+
+    \section{To-Do Sync Walk Through (After Sync State Obtained)}
+
+    This section consists of a basic walk through of what happens at the
+    application layer of the synchronization protocol when one synchronizes
+    the To-Do application (initiated from the Desktop). This run down is an
+    overview and there for does not contain all the Request and ACK messages
+    that would be used in between each of the major messages discussed.
+
+    \subsection{Initiate Synchronization}
+    The synchronization is initiated from the Desktop by a client application
+    making a TCP connection to the Zaurus on port 4244. As soon as the TCP
+    three way hand shake is completed (the connection made) the client
+    application sends a \emph{RAY} message to the Zaurus over this
+    connection. This \emph{RAY} message is used to tell a server application
+    running on the Zaurus that the Desktop has requested to synchronize. This
+    server application running on the Zaurus responds to the \emph{RAY}
+    message it received by making a TCP connection on port 4245 to a server
+    application running on the Desktop. \emph{Note: The original connection
+    from the Desktop client application to the Zaurus server application is
+    not closed at this point.}
+
+    Now that the connection has been made from the Zaurus to the Desktop
+    server application the synchronization can occur. The Desktop server
+    responds to receiving a TCP connection from the Zaurus by sending a
+    \emph{RAY} message over the newly created TCP connection to the
+    Zaurus. The Zaurus after receiving the \emph{RAY} message sends an
+    \emph{AAY} message back to the Desktop server.I assume that the \emph{RAY}
+    message is requesting to begin the synchronization process and the
+    \emph{AAY} message is response of acceptance.
+
+    \subsection{Obtain Authentication State}
+    Following the initiation of the synchronization the Desktop server must
+    check the Authentication State of the Zaurus to see if it needs to send a
+    password to the Zaurus for synchronization to work. The Desktop server
+    requests the Authentication State by sending an \emph{RIG} message. The
+    Zaurus responds to this request by sending an \emph{AIG} message which
+    contains among other things the Authentication State.
+
+    \subsubsection{Authenticate Password}
+    If the Authentication State of the Zaurus is one that requires a password
+    then the Desktop must send the password to the Zaurus for an
+    authentication check. The Desktop server does this by sending an \emph{RRL}
+    message, which contains the password, to the Zaurus. If the password is
+    successfully authenticated by the Zaurus, the Zaurus responds with an
+    \emph{AEX} message.
+
+    \subsection{Check Authentication State}
+    Following either the \emph{Authenticate Password} phase or the
+    \emph{Obtain Authentication State} phase depending on the value of the
+    authentication state received in the \emph{Obtain Authentication State}
+    phase, the Desktop server must check to see if the authentication state
+    has changed. The Desktop server does this by requesting the authentication
+    state from the Zaurus now that a password may have been sent to the Zaurus
+    for authentication. It request the authentication state using the same
+    method it used in the \emph{Obtain Authentication State}, sending an
+    \emph{RIG} message and receiving a \emph{AIG} message in response.
+
+    \subsection{Obtain Zaurus Synchronization State}
+    Following checking the authentication the Desktop server application then
+    needs to obtain the synchronization state so it can determine if it needs
+    to perform a full sync (it sets the sync state) or a item by item sync
+    (the sync state is already set). To determine this the Desktop server
+    requests the synchronization state from the Zaurus by sending a \emph{RMG}
+    message containing the identifier for the type of synchronization to
+    perform (To-Do, Calendar, Address, etc). The Zaurus responds to the Desktop
+    with a \emph{AMG} message which contains data that notifies the Desktop if
+    the Zaurus has a sync state or not.
+
+    \subsection{Request Time of Last Synchronization}
+    Following obtaining the synchronization state the Desktop server then
+    obtains the time that the last synchronization was performed from the
+    Zaurus. The Desktop sends an \emph{RTG} message (request for time of last
+    sync)  to the Zaurus. The Zaurus then responds with a \emph{ATG} message
+    which contains the time and date of the last synchronization. The Desktop
+    then uses this time stamp in comparison with time stamps representing the
+    time of object creation for items within its database. Hence, so it will
+    know which of its items need to be synchronized.
+
+    \subsection{Setting Time of Current Synchronization}
+    After obtaining the time of the last synchronization the Desktop server
+    application has enough information to do comparisons, however, the Zaurus
+    does not. The Zaurus only has the time of the last synchronization. Hence,
+    the Desktop server application takes the current time stamp of the
+    computer it is running on and sends that to the Zaurus as the time of the
+    current synchronization. The Desktop server applications does this by
+    sending a \emph{RTS} message to the Zaurus. The Zaurus then sends a
+    response \emph{AEX} message to the Desktop server application providing an
+    acceptance of the new synchronization time. The Zaurus records this time
+    and will use it as the response data in its \emph{ATG} message the next
+    time a synchronization is performed.
+
+    \subsection{Request Sync ID List}
+    Once all the synchronization time information has been shared between both
+    parties they are able to determine which of their items require
+    synchronization. Hence, the Desktop server application requests a list of
+    all the Sync IDs associated with in the Zaurus database that need to be
+    synchronized. The Desktop server application does this by sending a
+    \emph{RSY} message containing a synchronization type identifier of type
+    To-Do, Calendar, Address, etc. The Zaurus then responds to the Desktop
+    server application by sending it a \emph{ASY} message containing a list of
+    all the Sync IDs of items that require synchronization.
+
+    \subsection{Obtain Item Data}
+    Since the Desktop server now has a list of Sync IDs of the items it needs
+    to obtain the data of from the Zaurus it is ready to synchronize, obtain
+    the data and store it in its database. The Desktop server applications
+    obtains this data by requesting the data for each Sync ID it found in the
+    list that the Zaurus sent to it in the previous section. The Desktop
+    server application sends a \emph{RDR} message containing the Sync ID of
+    the item it is requesting data for. The Zaurus then responds by sending an
+    \emph{ADR} message containing data associated with the item that has that
+    Sync ID. The Desktop server does this for every Sync ID it found in the
+    list obtained in the above section until all the data has been
+    synchronized.
+
+    \subsection{State Finished Synchronizing}
+    Now that all the data has been transfered and stored in the Desktop
+    server applications database the Desktop wants to notify the Zaurus that
+    it is done asking for data to synchronize. The Desktop does this by
+    sending a \emph{RDS} message. The Zaurus responds to this by sending an
+    \emph{AEX} message declaring acceptance.
+
+    \subsection{Obtain Authentication State}
+    Following making the statement of being finished requesting data from the
+    Zaurus, the Desktop server application requests the authentication state
+    again. The reason for this is not clear due to the fact that the
+    authentication state has not changed in between the two messages. The
+    Desktop server application does this just as it did in the above sections,
+    it sends an \emph{RIG} message to the Zaurus. The Zaurus then responds
+    with an \emph{AIG} message which contains the authentication state.
+
+    \subsection{Request Ending of Connection}
+    After obtaining the authentication state for the last time the Desktop
+    server application requests that the Zaurus close the TCP connection since
+    the Zaurus initiated the connection to the Desktop server application. The
+    Desktop server application does this by sending an \emph{RQT} to the
+    Zaurus. The Zaurus responds to this message by sending an \emph{AEX}
+    message stating acceptance and then closing the TCP connection.
+
+    \subsection{Finishing Synchronization}
+    Now that the Zaurus has closed the TCP connection to the Desktop server
+    application the Desktop client application which initiated the
+    synchronization in the first place sends a \emph{Abort Message} (a common
+    message) to the Zaurus and then closing the TCP connection to the Zaurus
+    server application.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

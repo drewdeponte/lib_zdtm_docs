@@ -1,0 +1,96 @@
+%
+% Copyright (c) 2003, 2004, 2005 Andrew De Ponte.
+% Permission is granted to copy, distribute and/or modify this document
+% under the terms of the GNU Free Documentation License, Version 1.2
+% or any later version published by the Free Software Foundation;
+% with the Invariant Sections being Front-Cover Texts, with the
+% Front-Cover Texts being abstract. A copy of the license is included
+% in the section entitled "GNU Free Documentation License".
+%
+
+%
+% FileName:     doc_info.tex
+% Author:       Andrew De Ponte
+% E-Mail:       cyphactor@socal.rr.com
+% AIM:          HUNNYnNUTTS
+% Description:  This document is a LaTeX document containing the
+%               document information for the assumptions and observations
+%               document about the synchronization
+%               protocol used by Sharp's Zaurus SL-5600 v1.0 ROM and
+%               Sharp's Zaurus SL-5500 v3.10 ROM.
+%
+
+
+
+\part{Document Information}
+
+\section{Version Information}
+
+    \subsection{Does this document have a version?}
+    
+    This document will not be given a version due to the fact that I do not know the
+    protocol and that I am making assumptions about the protocol. When this
+    document has been further compiled and it is based on testing, I may
+    version the document in which case the version number will be trailing the
+    \emph{Title} of the document.
+
+    \subsection{How to distinguish different versions?}
+
+    The method to distinguish whether this document is a newer or
+    older version is by checking the production date right below the title.
+    If the production date is more recent than the production date on your
+    copy of this document you should use the one with the newer production
+    date.
+
+    \subsection{What are the rules on releases?}
+
+    The most recent release will \emph{not} always contain more
+    information than the last release. It is possible that some
+    of the information in the older release was incorrect and was removed.
+    It is also possible that the two releases look almost the same because
+    only a portion was modified.
+    Despite all of these possibilities, the common practice will
+    be to add more information on top of existing
+    data from the previous releases of the document.
+
+% Here I describe why this document and the effort behind it
+% is needed.
+\section{Why does this document exist?}
+
+    \subsection{Sharp's Decision}
+
+    This document and the effort behind it is needed because Sharp has
+    decided that they are only going to support Microsoft Windows users
+    when it comes to synchronizing the Zaurus SL-5600, leaving their
+    trusty Linux users out in cold. I read some where that this was due
+    to the fact that Sharp develops their Zaurus product for corporations and
+    that most of the corporations they develop the Zaurus for use Microsoft
+    Windows.
+
+    \subsection{Obtaining the Specifications}
+
+    I contacted Sharp and asked them if I could possibly obtain a copy of
+    the specifications for the synchronization protocol since they had
+    decided that they were not going to create a Linux application for
+    synchronization. They responded by telling me to go to their
+    developers site and talk with other developers to figure it out. After
+    looking all over the web and talking to all kinds of people I
+    decided that no specifications were available for this protocol.
+
+    \subsection{The Chosen Solution}
+
+    After my failure at the quest for the protocol specifications, I decided
+    that it was up to me to come up with a solution. After contemplating
+    possible solutions for about a week I decided that my decision was to
+    reverse engineer the protocol. I chose this solution because I think that
+    the Zaurus SL-5600 users should be able to synchronize their Zaurus with
+    their Linux box without having to install any special software on their
+    Zaurus.
+
+    \subsection{The Purpose}
+
+    This document contains the assumptions and observations of the on going
+    reverse engineering of the Zaurus SL-5600 synchronization protocol so that
+    developers may use the information to develop a synchronization software
+    application for Linux that will allow Linux users to synchronize their
+    Zaurus SL-5600, right out of the box.

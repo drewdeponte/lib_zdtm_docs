@@ -1,0 +1,317 @@
+%
+% Copyright (c) 2004, 2005 Andrew De Ponte.
+% Permission is granted to copy, distribute and/or modify this document
+% under the terms of the GNU Free Documentation License, Version 1.2
+% or any later version published by the Free Software Foundation;
+% with the Invariant Sections being Front-Cover Texts, with the
+% Front-Cover Texts being abstract. A copy of the license is included
+% in the section entitled "GNU Free Documentation License".
+%
+
+%
+% FileName:     zsync_suse9_conf.tex
+% Author:       Andrew De Ponte
+% E-Mail:       cyphactor@socal.rr.com
+% AIM:          HUNNYnNUTTS
+% Description:  This document is a LaTeX document containing the steps which
+%               I took to configure a stock SuSE 9.0 Linux system to handle
+%               the synchronization of my Zaurus SL-5600.
+%
+
+% Select the document class
+\documentclass{article}
+
+\usepackage{fullpage}
+
+% Set the document information
+\title{Zaurus SuSE 9.2 Cradle Synchronization Configuration}
+\author{Andrew De Ponte}
+\date{\today}
+
+% Begin the document
+\begin{document}
+
+% Now that i have set the information, I want to create the title of the
+% document.
+\maketitle
+
+% Here I place a page break so that the abstract has its own space.
+\newpage
+
+% Here I put the abstract of the document so the readers can decide if this
+% is the correct document to read.
+\begin{abstract}
+This document outlines the means used to configure a SuSE 9.2 system
+to handle synchronization of a Zaurus using the cradle and the synchronization
+software provided by http://zsrep.sourceforge.net.
+\end{abstract}
+
+% Here I place a page break so that the table of contents starts on its own
+% page.
+\newpage
+
+% Here I place the copyright notice and license information in which we
+% state that this document falls under the GNU FDL or GNU Free Documentation
+% License.
+\noindent Copyright \copyright 2004, 2005 Andrew De Ponte.\\
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.2 or any later
+version published by the Free Software Foundation; with the Invariant
+Sections being Front-Cover Texts, with the Front-Cover  Texts being
+abstract. A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+
+% Here I place a page break so that the license information does not get
+% combined with the table of contents.
+\newpage
+
+% Place the table of contents of the document here.
+\tableofcontents
+
+% Here I place a page break so that the table of contents exists in its own
+% space and does not fall into the actual document space.
+\newpage
+
+% Here should be the actual content of the document.
+\section{Disable Firewall}
+
+The first thing which needs to be done to configure ones SuSE 9.2 system for
+Zaurus synchronization over the USB Cradle is disable the standard firewall
+via \emph{YAST}. This can be done by running \emph{YAST}, going to the
+\emph{Security and Users} section, and clicking on \emph{Firewall}. At this
+point one will be presented with one of two possible screens. The first allows
+for selection of external and internal interfaces. If you have
+gotten this screen then your firewall is already disabled. The second contains
+a radio button selection which allows the user to edit their
+current firewall configuration or disable their current configuration. If you
+have gotten this screen select the \emph{Stop Firewall and Remove from Boot
+  Process} radio button, click the \emph{Next} button, and click the
+\emph{Next} button again. At this point a window should pop up notifying you
+that the firewall has been turned off. Simply click the \emph{OK} button and
+close \emph{YAST}.
+
+Firewalls are a very nice security tool and the fact that they
+can be configured to allow for this setup to work. It is much too broad of a
+subject to be covered in this document. Hence, my suggestion would be to read
+up on IP-tables and learn how to manually configure a firewall in
+Linux. Disabling the firewall in this case eliminates a large number of
+variables that could create problems in getting this setup working.
+
+\section{Required Driver}
+
+The stock SuSE 9.2 kernel has built-in driver support for
+the Zaurus hence you need not do anything.  The driver (kernel module) which
+is used for the Zaurus is the \emph{usbnet} driver.
+
+\section{Network Configuration}
+
+The Zaurus driver (\emph{usbnet}) is actually a driver which allows
+a USB device to act as a network device. The power of this is that it allows
+applications written for standard network protocols to work over the USB
+connection between the Zaurus and the computer. Since this driver basically
+creates a network device, one has to setup a configuration file so that the
+network device is automatically brought up and configured by the hotplug
+system, one of it's other specialties.  This driver (\emph{usbnet}) creates a
+USB Ethernet device, normally named (\emph{usb0}).  This device needs to
+have the address of \emph{192.168.129.1}, a class C network address, due to
+the fact that the address of the Zaurus is \emph{192.168.129.201}, a
+class C network address.
+
+    \subsection{sysconfig}
+
+    A common method for configuring network devices is to use device named
+    files in \emph{/etc/sysconfig/network/} with specific options set for
+    that specific device. The good thing about this method is that a program
+    called \emph{ifup} (interface up) supports it. One might say, well who
+    cares if \emph{ifup} supports it? Well, the hotplug system as it is
+    setup supports the \emph{ifup} program. One would want the network
+    device created by the Zaurus driver to be configured
+    automatically! To achieve this one should create a file named
+    \emph{ifcfg-usb0} in \emph{/etc/sysconfig/network/}. The file should
+    contain the following:
+
+    \begin{verbatim}
+    BOOTPROTO='static'
+    BROADCAST='192.168.129.255'
+    IPADDR='192.168.129.1'
+    MTU=''
+    NETMASK='255.255.255.0'
+    NETWORK='192.168.129.0'
+    REMOTE_IPADDR=''
+    STARTMODE='hotplug'
+    UNIQUE=''
+    \end{verbatim}
+
+    \subsection{Zaurus PC Link}
+
+    On the Zaurus end of things, the Zaurus must have its IP address set as
+    well. This is done on Sharp ROMs by using their \emph{PC Link}
+    application. Go to the \emph{PC Link} application on your Zaurus. It can
+    be found on your Zaurus under the \emph{Settings} tab. Once in the
+    \emph{PC Link} application, you want to make sure the Zaurus hostname is
+    set to ``zaurus'' (without the quotes) and that the USB IP address of the
+    Zaurus is set to ``192.168.129.201'' (without the quotes). You also want
+    to make sure that the proper connection type is selected. The \emph{USB -
+    TCP/IP (advanced)} option, should be the connection option that is
+    selected in the drop down list for the connection type. If it is
+    \emph{NOT} then select it. After, the above have been performed tap the
+    \emph{OK} button to apply your changes.
+
+\section{Zaurus and Desktop Meet}
+
+It is now time for the Zaurus and the SuSE 9.2 Desktop to meet.
+
+\subsection{Watching the Log File}
+
+Now, one will want to know that everything is working properly. Hence, they
+would want to see the log output of what ever they are doing. In this case one
+wants to see the log output of the kernel, kernel modules, and hotplug
+system. To do so one would run the following command in a terminal as super
+user:
+
+\begin{verbatim}
+# tail -f /var/log/messages
+\end{verbatim}
+
+Keep this terminal open and visible throughout the following process for it
+will display changes made to log file as things are performed.
+
+\subsection{Plugging in the Cradle}
+
+At this stage one should plug in their \emph{empty} Zaurus cradle into a
+working USB port on their SuSE 9.2 box. Note: You will not see anything happen
+in the \emph{/var/log/messages} tail yet because the cradle isn't the device,
+the cradle is basically just a spiffy wire that holds the
+Zaurus rather than just connecting the Zaurus.
+
+\subsection{Plugging in the Zaurus}
+
+At this stage one should take their Zaurus, \emph{in powered off state}, and
+place it fully into the cradle. Note: You still won't see anything in the
+\emph{/var/log/messages} tail yet because the Zaurus is off.
+
+\subsection{Turning on the Zaurus}
+
+Turn on your Zaurus, leaving it in the cradle. You should see in the
+\emph{/var/log/messages} tail something similar to the following:
+
+\begin{verbatim}
+Jan 24 09:42:57 waddler kernel: usb 2-1: new full speed USB device using address 2
+Jan 24 09:42:57 waddler kernel: usb 2-1: Product: SL-5600
+Jan 24 09:42:57 waddler kernel: usb 2-1: Manufacturer: Sharp
+Jan 24 09:43:04 waddler kernel: usb0: register usbnet at usb-0000:00:11.3-1, Sharp Zaurus, PXA-2xx based
+Jan 24 09:43:04 waddler kernel: usbcore: registered new driver usbnet
+Jan 24 09:43:25 waddler kernel: usb0: no IPv6 routers present
+\end{verbatim}
+
+The first line is the usb kernel portion recognizing the Zaurus as full speed
+USB device and identifying what address it is using. The second and third
+lines are the usb kernel portion outputting its Product and Manufacturer
+information. The fourth line and fifth line are very important. They are
+showing that the \emph{usb0} device is being registered to the \emph{usbnet}
+kernel module. This is basically showing that the hotplug system detected your
+Zaurus and then loaded the usbnet driver for it. The fifth line is showing
+that the usbcore kernel module recognized and registered the usbnet driver.
+The sixth line is just some output complaining because IPv6 is not setup for
+the \emph{usb0} device.
+
+SuSE 9.2 along with SuSE 9.1 are known to display a pop up window notifying
+the user of new hardware. It seems that SuSE detects the Zaurus device as a
+modem and prompts the user to configure the device as a modem. Simply accept
+configuration, which will take you into YAST. Once, in YAST the window shows a
+list of detected modems and configured modems. All you have to do is click the
+\emph{Finish} button leaving the Zaurus as a detected, however not configured
+modem. This should stop SuSE from prompting you for configuration anymore.
+
+\subsection{Checking Configuration}
+
+At this point you should now run the following as super user to check if the
+driver was loaded properly and the device configured properly:
+
+\begin{verbatim}
+# /sbin/ifconfig usb0
+\end{verbatim}
+
+You should see the following:
+
+\begin{verbatim}
+usb0      Link encap:Ethernet  HWaddr 5E:E0:14:AE:96:16
+          inet addr:192.168.129.1  Bcast:192.168.129.255  Mask:255.255.255.0
+          inet6 addr: fe80::5ce0:14ff:feae:9616/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 b)  TX bytes:484 (484.0 b)
+\end{verbatim}
+
+This shows that the hotplug system use the
+\emph{/etc/sysconfig/network/ifcfg-usb0} file to configure the device for you
+automatically when the device was found.
+
+\subsection{Checking Routing}
+
+Now, you should exit super user mode and run the following:
+
+\begin{verbatim}
+$ netstat -rn
+\end{verbatim}
+
+You should see a line in the output that looks as follows:
+
+\begin{verbatim}
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+192.168.129.0   0.0.0.0         255.255.255.0   U         0 0          0 usb0
+\end{verbatim}
+
+This shows that the hotplug system used the
+\emph{/etc/sysconfig/network/ifcfg-usb0} file to configure your routing tables
+so that the IP packets are routed to the proper devices for the proper
+address. In this case it shows that the 192.168.129 class C address family is
+routed out the usb0 device, which is correct.
+
+\subsection{Testing Connectivity}
+
+Now, that everything has happened as expected, it is time to test connectivity
+between the Zaurus and the SuSE 9.2 box. You can do this by running the
+following command:
+
+\begin{verbatim}
+$ ping 192.168.129.201
+\end{verbatim}
+
+You should see output similar to the following:
+
+\begin{verbatim}
+PING 192.168.129.201 (192.168.129.201) 56(84) bytes of data.
+64 bytes from 192.168.129.201: icmp_seq=1 ttl=255 time=3.26 ms
+64 bytes from 192.168.129.201: icmp_seq=2 ttl=255 time=1.15 ms
+64 bytes from 192.168.129.201: icmp_seq=3 ttl=255 time=1.33 ms
+64 bytes from 192.168.129.201: icmp_seq=4 ttl=255 time=1.56 ms
+64 bytes from 192.168.129.201: icmp_seq=5 ttl=255 time=1.75 ms
+64 bytes from 192.168.129.201: icmp_seq=6 ttl=255 time=0.940 ms
+\end{verbatim}
+
+As you can see 6 pings were sent and 6 echos were received. You should see
+similar output in the results of your ping. To stop the ping press Ctrl-C in
+the terminal window you are running
+the ping in. The time just shows the unit of time which it took to get an echo
+back from each ping packet.
+
+If you got output that looked similar to the above then you are good and you
+are ready to use this connection to do what ever you want.
+
+\section{Usage}
+
+After the previous has been performed all should be good. All one should
+have to do is leave the sync cradle plugged into the box at all times and
+put the Zaurus in and power it on and off as needed for
+synchronization.
+
+% Here I include a version of the fdl.tex file that I have modified so it
+% can be included directly into ones Latex article rather than into a book.
+\include{fdl}
+
+% End the document.
+\end{document}

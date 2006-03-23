@@ -1,0 +1,99 @@
+%
+% Copyright (c) 2003, 2004, 2005 Andrew De Ponte.
+% Permission is granted to copy, distribute and/or modify this document
+% under the terms of the GNU Free Documentation License, Version 1.2
+% or any later version published by the Free Software Foundation;
+% with the Invariant Sections being Front-Cover Texts, with the
+% Front-Cover Texts being abstract. A copy of the license is included
+% in the section entitled "GNU Free Documentation License".
+%
+
+%
+% FileName:     zsp_ass_obs.tex
+% Author:       Andrew De Ponte
+% E-Mail:       cyphactor@socal.rr.com
+% AIM:          HUNNYnNUTTS
+% Description:  This document is a LaTeX document containing the
+%               assumptions and observations about the synchronization
+%               protocol used by Sharp's Zaurus SL-5600 v1.0 ROM and
+%               Sharp's Zaurus SL-5500 v3.10 ROM, in hopes to produce
+%               a document that will contain enough information about
+%               the protocol that it will allow people to write software
+%               to interact with the Zaurus via this protocol.
+%
+
+
+% Select the document class
+\documentclass{report}
+
+\usepackage{longtable}
+\usepackage{fullpage}
+
+% Set the document information
+\title{Zaurus Synchronization Protocol Assumptions and Observations}
+\author{Andrew De Ponte}
+\date{\today}
+
+% Set it to use page headings rather than just page numbers at the bottom.
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% Begin the document
+\begin{document}
+
+% Now that I have set the information, I want
+% to create the title of the document.
+\maketitle
+
+% Here I put the abstract of the document so the
+% readers can decide if this is the correct document
+% to read.
+\begin{abstract}
+This document specifies the assumptions and observations that have been made
+about the protocol created by Sharp to synchronize the Zaurus SL-5600 ROM 1.00
+and up with their Windows version of Qtopia Desktop. These assumptions are
+also believed to be applicable to the Zaurus SL-5500 ROM version 3.10 and up
+as well as the Zaurus SL-6000 and it's Sharp ROMs.
+\end{abstract}
+
+% Here I place a page break so that the table of contents
+% starts on its own page.
+\newpage
+
+% Here I place the copyright notice and license information
+% in which we state that this document falls un the GNU FDL
+% or GNU Free Documentation License.
+\noindent Copyright \copyright 2003, 2004, 2005 Andrew De Ponte.\\
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2
+or any later version published by the Free Software Foundation;
+with the Invariant Sections being Front-Cover Texts, with the
+Front-Cover Texts being abstract. A copy of the license is included
+in the section entitled "GNU Free Documentation License".
+
+% Here I place a page break so that the license information
+% does not get combined with the table of contents.
+\newpage
+
+% Place the table of contents of the document here.
+\tableofcontents
+
+% Here I place a page break so that the table of contents
+% exists in its own space and does not fall into the actual
+% document space.
+\newpage
+
+% Include the document information part from the doc_info.tex file
+\include{doc_info}
+
+% Include the protocol assumptions and observations part from pao.tex file
+\include{pao}
+
+\part{Document License Information}
+% Here I include a version of the fdl.tex file that I have modified so
+% it can be included directly into ones Latex article rather than into
+% a book.
+\include{fdl}
+
+% End the document
+\end{document}
