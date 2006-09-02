@@ -5,6 +5,7 @@ $TITLES_LANGUAGE = 'english';
 $ALLOW_PHP = 1;
 $STYLESHEET = '';
 $ADDRESS="";
+
 $STYLESHEET_CASCADE = join("\n",
 '<?php require("../../../include/config.inc");?>',
 '<?php require("$phppath/head-css.inc");?>');
