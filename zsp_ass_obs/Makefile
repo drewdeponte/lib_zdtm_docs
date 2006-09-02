@@ -9,6 +9,9 @@ all :
 	latex $(SRC)
 	latex $(SRC)
 
+html:
+	latex2html -init $(DOC_NAME).init $(SRC)
+
 report : $(OUTFILE)
 	dvips -t letter -Z -q -o $(PS_FILE) $(OUTFILE)
 	ps2pdf $(PS_FILE) $(PDF_FILE)

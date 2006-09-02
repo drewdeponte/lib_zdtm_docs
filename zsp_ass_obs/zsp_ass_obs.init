@@ -1,0 +1,22 @@
+$default_language = 'english';
+$TOP_NAVIGATION=1;
+$BOTTOM_NAVIGATION=1;
+$TITLES_LANGUAGE = 'english';
+$ALLOW_PHP = 1;
+$STYLESHEET = '';
+$ADDRESS="";
+$STYLESHEET_CASCADE = join("\n",
+'<?php require("../../../include/config.inc");?>',
+'<?php require("$phppath/head-css.inc");?>');
+
+sub top_navigation_panel {
+'<?php require("$phppath/body-header.inc")?>' .
+"\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
+"<div id='content'>\n"
+}
+
+sub bot_navigation_panel {
+"</div>\n" .
+"\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
+'<?php require("$phppath/body-footer.inc")?>'
+}
