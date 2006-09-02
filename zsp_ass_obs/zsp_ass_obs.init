@@ -5,34 +5,29 @@ $TITLES_LANGUAGE = 'english';
 $ALLOW_PHP = 1;
 $STYLESHEET = '';
 $ADDRESS="";
+$ASCII_MODE = 1;
+$USING_STYLES = 0;
 
 $STYLESHEET_CASCADE = join("\n",
 '<?php require("../../include/config.inc");?>',
 '<?php require("$phppath/head-css.inc");?>');
 
 sub top_navigation_panel {
+"</div>\n" . #HACK
 '<?php require("$phppath/body-header.inc")?>' .
 "<div id='main'>\n" .
-"\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
-"<div id='content'>\n"
+"$NEXT_TITLE $UP_TITLE $PREVIOUS_TITLE\n" .
+"<div id='content'>\n" .
+"<div>\n" #HACK
 }
 
 sub bot_navigation_panel {
+"</div>\n" . #HACK
 "</div>\n" .
-"\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
+"$NEXT_TITLE $UP_TITLE $PREVIOUS_TITLE\n" .
 '<?php require("$phppath/body-footer.inc")?>' .
-"</div>\n"
+"</div>\n" .
+"<div>\n" #HACK
 }
 
-# The japanese patch is overriding this somewhere else.
-sub get_date {
-    local($format,$order) = @_;
-    local(@lt) = localtime;
-    local($d,$m,$y) = @lt[3,4,5];
-    if ($format =~ /ISO/) {
-        sprintf("%4d-%02d-%02d", 1900+$y, $m+1, $d);
-    } elsif ($format) {
-        if ($order) { eval "sprintf(".$format.",".$order.")"; }
-        else { sprintf($format, $d, $m+1, 1900+$y); }
-    } else { sprintf("%d/%d/%d", $m+1, $d, 1900+$y); }
-}
+1;
