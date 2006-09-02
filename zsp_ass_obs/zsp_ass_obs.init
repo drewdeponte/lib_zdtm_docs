@@ -12,6 +12,7 @@ $STYLESHEET_CASCADE = join("\n",
 
 sub top_navigation_panel {
 '<?php require("$phppath/body-header.inc")?>' .
+"<div id='main'>\n" .
 "\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
 "<div id='content'>\n"
 }
@@ -19,7 +20,8 @@ sub top_navigation_panel {
 sub bot_navigation_panel {
 "</div>\n" .
 "\n$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
-'<?php require("$phppath/body-footer.inc")?>'
+'<?php require("$phppath/body-footer.inc")?>' .
+"</div>\n"
 }
 
 # The japanese patch is overriding this somewhere else.

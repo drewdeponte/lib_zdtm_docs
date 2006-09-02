@@ -10,7 +10,7 @@ all :
 	latex $(SRC)
 
 html:
-	latex2html -init $(DOC_NAME).init $(SRC)
+	latex2html -iso_language EN -init $(DOC_NAME).init -split 2 $(SRC)
 
 report : $(OUTFILE)
 	dvips -t letter -Z -q -o $(PS_FILE) $(OUTFILE)
