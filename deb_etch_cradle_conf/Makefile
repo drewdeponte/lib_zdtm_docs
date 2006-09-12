@@ -14,7 +14,7 @@ report : $(OUTFILE)
 	ps2pdf $(PS_FILE) $(PDF_FILE)
 
 html:
-	latex2html -iso_language EN -init $(DOC_NAME).init -split 0 $(SRC)
+	latex2html -iso_language EN -init $(DOC_NAME).init -split 2 $(SRC)
 
 print : $(PS_FILE)
 	lp $(PS_FILE)

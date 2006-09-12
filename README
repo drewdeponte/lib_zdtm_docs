@@ -1,0 +1,31 @@
+Generating webpages with latex2html that fit within the rest of our
+styled website requires a bit of tweaking.  latex2html is perl based and
+you can provide function substitutions via a .init file that you pass on
+execution.  These substitutions allow you to overwrite the style file
+and the top and bottom navigation panels.
+
+If you are creating a new document, you can probably copy the .init file
+from the others without any difficulty.  The Makefiles are setup with
+the scheme of document_name.tex, and you would need the .init file to be
+named document_name.init.
+
+Originally we tried to use the sourceforge version of latex2html,
+however it is patched for japanese and injects japanese in some places
+regardless of execution options.
+
+The .init files have been modeled around latex2html 1.71 (2002-2-1)
+which is available by default in debian.  The main difference for the
+navigation panels between this version and the sourceforge version, is
+that it tries to inject a div around the navigation panels.  However,
+this is not what we want for our layout, so the navigation panel
+functions have a leading closing div at the top and an opening div at
+the bottom.
+
+If you are using a Makefile styled on the others, make html should
+generate the html tree.  If the document has labels or other things you
+will need to fully compile it to fill in the .aux file before the html
+will work entirely.  I believe latex2html will warn you if this is
+necessary.
+
+latex2html outputs into a subdirectory.  You can just scp the
+subdirectory to the webtree.
