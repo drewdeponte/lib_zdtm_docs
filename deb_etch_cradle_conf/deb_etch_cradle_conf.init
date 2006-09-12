@@ -1,0 +1,33 @@
+$default_language = 'english';
+$TOP_NAVIGATION=1;
+$BOTTOM_NAVIGATION=1;
+$TITLES_LANGUAGE = 'english';
+$ALLOW_PHP = 1;
+$STYLESHEET = '';
+$ADDRESS="";
+$ASCII_MODE = 1;
+$USING_STYLES = 0;
+
+$STYLESHEET_CASCADE = join("\n",
+'<?php require("../../include/config.inc");?>',
+'<?php require("$phppath/head-css.inc");?>');
+
+sub top_navigation_panel {
+"</div>\n" . #HACK
+'<?php require("$phppath/body-header.inc")?>' .
+"<div id='main'>\n" .
+"$NEXT_TITLE $UP_TITLE $PREVIOUS_TITLE\n" .
+"<div id='content'>\n" .
+"<div>\n" #HACK
+}
+
+sub bot_navigation_panel {
+"</div>\n" . #HACK
+"</div>\n" .
+"$NEXT_TITLE $UP_TITLE $PREVIOUS_TITLE\n" .
+'<?php require("$phppath/body-footer.inc")?>' .
+"</div>\n" .
+"<div>\n" #HACK
+}
+
+1;

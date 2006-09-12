@@ -1,0 +1,266 @@
+%
+% Copyright (c) 2004, 2005, 2006 Andrew De Ponte.
+% Permission is granted to copy, distribute and/or modify this document
+% under the terms of the GNU Free Documentation License, Version 1.2
+% or any later version published by the Free Software Foundation;
+% with the Invariant Sections being Front-Cover Texts, with the
+% Front-Cover Texts being abstract. A copy of the license is included
+% in the section entitled "GNU Free Documentation License".
+%
+
+%
+% FileName:     deb_etch_cradle_conf.tex
+% Author:       Andrew De Ponte
+% E-Mail:       cyphactor@socal.rr.com
+% AIM:          HUNNYnNUTTS
+% Description:  This document is a LaTeX document containing the steps which
+%               I took to configure a stock Debian etch Linux system to handle
+%               the synchronization of my Zaurus SL-5600.
+%
+
+% Select the document class
+\documentclass{article}
+
+\usepackage{fullpage}
+
+% Set the document information
+\title{Zaurus Debian "etch (testing)" Cradle Synchronization Configuration}
+\author{Andrew De Ponte}
+\date{\today}
+
+% Begin the document
+\begin{document}
+
+% Now that i have set the information, I want to create the title of the
+% document.
+\maketitle
+
+% Here I place a page break so that the abstract has its own space.
+\newpage
+
+% Here I put the abstract of the document so the readers can decide if this
+% is the correct document to read.
+\begin{abstract}
+This document outlines the means used to configure a Debian etch
+(testing) system to handle synchronization of a Zaurus using the cradle
+and the synchronization software provided by
+http://zsrep.sourceforge.net.
+\end{abstract}
+
+% Here I place a page break so that the table of contents starts on its own
+% page.
+\newpage
+
+% Here I place the copyright notice and license information in which we
+% state that this document falls under the GNU FDL or GNU Free Documentation
+% License.
+\noindent Copyright \copyright 2004, 2005, 2006 Andrew De Ponte.\\
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.2 or any later
+version published by the Free Software Foundation; with the Invariant
+Sections being Front-Cover Texts, with the Front-Cover  Texts being
+abstract. A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+
+% Here I place a page break so that the license information does not get
+% combined with the table of contents.
+\newpage
+
+% Place the table of contents of the document here.
+\tableofcontents
+
+% Here I place a page break so that the table of contents exists in its own
+% space and does not fall into the actual document space.
+\newpage
+
+% Here should be the actual content of the document.
+
+\section{Required Driver}
+
+The stock Debian etch kernel 2.6.16 has built-in driver support for the
+Zaurus hence you need not do anything if you are using this kernel.  The
+driver (kernel module) which is used for the Zaurus is the \emph{usbnet}
+driver.
+
+\section{Network Configuration}
+
+The Zaurus driver (\emph{usbnet}) is actually a driver which allows a
+USB device to act as a network device. The power of this is that it
+allows applications written for standard network protocols to work over
+the USB connection between the Zaurus and the computer. Since this
+driver basically creates a network device, one has to setup a
+configuration file so that the network device is automatically brought
+up and configured by system.  This driver (\emph{usbnet}) creates a USB
+Ethernet device, normally named (\emph{usb0}).  This device needs to
+have the address of \emph{192.168.129.1}, a class C network address, due
+to the fact that the address of the Zaurus is \emph{192.168.129.201}, a
+class C network address.
+
+    \subsection{/etc/network/interfaces}
+
+    The method for configuring network devices in debian is to add an
+    entry to the \emph{/etc/network/interfaces} configuration file. The
+    \emph{/etc/network/interfaces} file should contain the following:
+
+    \begin{verbatim}
+    auto usb0
+    allow-hotplug usb0
+    iface usb0 inet static
+        address 192.168.129.1
+        netmask 255.255.255.0
+        network 192.168.129.0
+        broadcast 192.168.129.255
+    \end{verbatim}
+
+    \subsection{Zaurus PC Link}
+
+    On the Zaurus end of things, the Zaurus must have its IP address set as
+    well. This is done on Sharp ROMs by using their \emph{PC Link}
+    application. Go to the \emph{PC Link} application on your Zaurus. It can
+    be found on your Zaurus under the \emph{Settings} tab. Once in the
+    \emph{PC Link} application, you want to make sure the Zaurus hostname is
+    set to ``zaurus'' (without the quotes) and that the USB IP address of the
+    Zaurus is set to ``192.168.129.201'' (without the quotes). You also want
+    to make sure that the proper connection type is selected. The \emph{USB -
+    TCP/IP (advanced)} option, should be the connection option that is
+    selected in the drop down list for the connection type. If it is
+    \emph{NOT} then select it. After, the above have been performed tap the
+    \emph{OK} button to apply your changes.
+
+\section{Zaurus and Desktop Meet}
+
+It is now time for the Zaurus and the Debian Desktop to meet.
+
+\subsection{Watching the Log File}
+
+Now, one will want to know that everything is working properly. Hence, they
+would want to see the log output of what ever they are doing. In this case one
+wants to see the log output of the kernel, kernel modules, and hotplug
+system. To do so one would run the following command in a terminal as super
+user:
+
+\begin{verbatim}
+# tail -f /var/log/messages
+\end{verbatim}
+
+Keep this terminal open and visible throughout the following process for it
+will display changes made to log file as things are performed.
+
+\subsection{Plugging in the Cradle}
+
+At this stage one should plug in their \emph{empty} Zaurus cradle into a
+working USB port on their Debian box. Note: You will not see anything happen
+in the \emph{/var/log/messages} tail yet because the cradle isn't the device,
+the cradle is basically just a spiffy wire that holds the
+Zaurus rather than just connecting the Zaurus.
+
+\subsection{Plugging in the Zaurus}
+
+At this stage one should take their Zaurus, \emph{in powered off state}, and
+place it fully into the cradle. Note: You still won't see anything in the
+\emph{/var/log/messages} tail yet because the Zaurus is off.
+
+\subsection{Turning on the Zaurus}
+
+Turn on your Zaurus, leaving it in the cradle. You should see in the
+\emph{/var/log/messages} tail something similar to the following:
+
+\begin{verbatim}
+Sep 12 13:26:13 devtux kernel: usb 1-1: new full speed USB device using ohci_hcd and address 3
+Sep 12 13:26:13 devtux kernel: usb 1-1: configuration #1 chosen from 1 choice
+Sep 12 13:26:13 devtux kernel: usb0: register 'zaurus' at usb-0000:00:02.0-1, pseudo-MDLM (BLAN) device, 82:1e:3b:d9:c9:23
+\end{verbatim}
+
+\subsection{Checking Configuration}
+
+At this point you should now run the following as super user to check if the
+driver was loaded properly and the device configured properly:
+
+\begin{verbatim}
+# /sbin/ifconfig usb0
+\end{verbatim}
+
+You should see the following:
+
+\begin{verbatim}
+usb0      Link encap:Ethernet  HWaddr 82:1E:3B:D9:C9:23  
+          inet addr:192.168.129.1  Bcast:192.168.129.255  Mask:255.255.255.0
+          inet6 addr: fe80::801e:3bff:fed9:c923/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:21 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:2251 (2.1 KiB)  TX bytes:492 (492.0 b)
+\end{verbatim}
+
+This shows that the system used the \emph{/etc/network/interfaces} file to
+configure the device for you automatically when the device was found.
+
+\subsection{Checking Routing}
+
+Now, you should exit super user mode and run the following:
+
+\begin{verbatim}
+$ netstat -rn
+\end{verbatim}
+
+You should see a line in the output that looks as follows:
+
+\begin{verbatim}
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+192.168.129.0   0.0.0.0         255.255.255.0   U         0 0          0 usb0
+\end{verbatim}
+
+This shows that the system used the \emph{/etc/network/interfaces} file
+to configure your routing tables so that the IP packets are routed to
+the proper devices for the proper address. In this case it shows that
+the 192.168.129 class C address family is routed out the usb0 device,
+which is correct.
+
+\subsection{Testing Connectivity}
+
+Now, that everything has happened as expected, it is time to test
+connectivity between the Zaurus and the Debian box. You can do this by
+running the following command:
+
+\begin{verbatim}
+$ ping 192.168.129.201
+\end{verbatim}
+
+You should see output similar to the following:
+
+\begin{verbatim}
+PING 192.168.129.201 (192.168.129.201) 56(84) bytes of data.
+64 bytes from 192.168.129.201: icmp_seq=1 ttl=255 time=3.26 ms
+64 bytes from 192.168.129.201: icmp_seq=2 ttl=255 time=1.15 ms
+64 bytes from 192.168.129.201: icmp_seq=3 ttl=255 time=1.33 ms
+64 bytes from 192.168.129.201: icmp_seq=4 ttl=255 time=1.56 ms
+64 bytes from 192.168.129.201: icmp_seq=5 ttl=255 time=1.75 ms
+64 bytes from 192.168.129.201: icmp_seq=6 ttl=255 time=0.940 ms
+\end{verbatim}
+
+As you can see 6 pings were sent and 6 echos were received. You should
+see similar output in the results of your ping. To stop the ping press
+Ctrl-C in the terminal window you are running the ping in. The time just
+shows the unit of time which it took to get an echo back from each ping
+packet.
+
+If you got output that looked similar to the above then you are good and you
+are ready to use this connection to do what ever you want.
+
+\section{Usage}
+
+After the previous has been performed all should be good. All one should
+have to do is leave the sync cradle plugged into the box at all times and
+put the Zaurus in and power it on and off as needed for
+synchronization. \emph{Note:} The Zaurus does not have to be in powered
+off state when it is plugged in the cradle, that is just how I decided
+to present it in this document for consistency.
+
+% Here I include a version of the fdl.tex file that I have modified so it
+% can be included directly into ones Latex article rather than into a book.
+\include{fdl}
+
+% End the document.
+\end{document}
