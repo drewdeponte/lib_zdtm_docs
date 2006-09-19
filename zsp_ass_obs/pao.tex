@@ -1200,7 +1200,22 @@
             It is a response to the \emph{RMG} message. Given that it contains
             the synchronization log, I assume that the purpose is to is solely
             to send the synchronization log to the Desktop synchronization
-            software.
+            software. This is seemingly used to determine if a full
+            (slow) sync is necessary. If the sync log is completely
+            empty the checksum of the message should be 213. The third
+            byte of the content of the message can be checked to
+            determine if a specific type of sync log is empty. This is
+            done by bitwise-anding the third byte of the message content
+            with the appropriate sync types mask and checking for a
+            resulting value of 0. If the resulting value is 0 then a
+            full (slow) sync has already been performed for that sync
+            type. The necessary masks for comparison are as follows:
+
+            \begin{itemize}
+            \item ToDo Mask \textbf{0x01}
+            \item Calendar Mask \textbf{0x02}
+            \item Address Book Mask \textbf{0x04}
+            \end{itemize}
 
         \subsection{ATG}
 
@@ -1976,7 +1991,7 @@
     \item DATA\_ID\_BARRAY - This data is stored in X number of bytes. The X
     number of bytes are transmitted as an array of bytes. This data type is
     used to represent the category of an item. The byte array only consists of
-    ASCII charactoers. This byte array represents the ID of the category an
+    ASCII characters. This byte array represents the ID of the category an
     item is associated with.
 
     \item DATA\_ID\_UCHAR - This data is stored within 1 byte. It represents
@@ -1998,7 +2013,7 @@
     \subsection{Parameter Exceptions}
 
     The information provided in Table \ref{paramtable} is quite extensive,
-    however it does not cover some specific data handeling specifications due
+    however it does not cover some specific data handling specifications due
     to the limited remarks space. Such needed specifications are duly place in
     this section to allow for the depth of description needed.
 
@@ -2017,7 +2032,7 @@
       the timezone setting of the Zaurus is. Given that the desktop software
       does \emph{NOT} know the Zaurus timezone setting the software must use
       the date as passed without converting it. This would make it show up as
-      filling the same date as on the Zaurus. However, the times wolud be off
+      filling the same date as on the Zaurus. However, the times would be off
       by the timezone difference. Most people prefer this over the correct
       way. However, if the developers of the Zaurus synchronization software
       were intelligent they would have passed it over as UTC rather than local
@@ -2025,7 +2040,7 @@
 
       \item ALSD, ALED - The \emph{ALSD} and \emph{ALED} parameters are used
       to represent the \emph{All Day Start Date} and \emph{All Day End Date}
-      of an event. These fields are redundent and contain the same date
+      of an event. These fields are redundant and contain the same date
       information as the \emph{TIM1} and \emph{TIM2} parameters when an event
       is marked as an \emph{All Day} event. The difference is that the date is
       the only valid portion of these \emph{DATA\_ID\_TIME} parameters. The
