@@ -1189,27 +1189,76 @@
 
             \subsubsection{Content}
 
-            The \emph{AMG} message looks to contain a large number of NULL
-            byte along with some other non NULL bytes. It seems to always
-            start with SL. I believe these bytes to represent the
-            synchronization log or at least a signature of the synchronization
-            log.
+            The \emph{AMG} message seems to have two different forms.
+            The first form is what we will call the \emph{Sync State
+            Cleared} form. In this case the message content is built up
+            of 49 bytes all of which have the value 0x00 in hex. This
+            form only appears if the Sync State on the Zaurus was
+            cleared previously, or if the Zaurus has never been
+            synchronized before.
+
+            The second form is what we will call the \emph{Sync State
+            Exists} form. In this case the message content is built up
+            of a large number of NULL bytes along with some other non
+            NULL bytes. It seems to always start with two bytes which
+            contain the ASCII values of the S and L characters.
+            Following, the first two bytes is the third byte which seems
+            to be used to identify the Sync State (Empty/Not Empty) for
+            a specific type of synchronization. The following bytes
+            meanings are currently unknown. The content layout of this
+            form is as follows:
+
+            \begin{verbatim}
+              [ SL chars (2 Bytes) ] [ Sync State (1 Byte) ]
+              [ UK (46 Bytes) ]
+            \end{verbatim}
+
+            \begin{enumerate}
+            \item SL chars (2 Bytes) - This is just two bytes containing
+            the ascii values the S and L characters in the given sequence.
+
+            \item Sync State (1 Byte) - This singular byte which
+            represents the Full/Empty Sync State for all the different
+            types of synchronizations. The bits of this byte are used as
+            flags to specify which sync types require a Full (Slow)
+            sync. If the associated bit is set (1) then it is been
+            synced since the last manual State Clearing. Hence, a Full
+            Sync is NOT necessary if the bit is set(1). The following
+            define which bit in the byte is associated with each type of
+            synchronization.
+                \begin{itemize}
+                \item Todo - flag is 1s bit of the byte in binary.
+                \item Calendar - flag is the 2s bit of the byte in
+                binary.
+                \item Address Book - flag is the 4s bit of the byte in
+                binary.
+                \end{itemize}
+
+            \item UK (46 Bytes) - The meaning of these bytes is
+            currently unknown.
+            \end{enumerate}
 
             \subsubsection{Purpose}
 
-            It is a response to the \emph{RMG} message. Given that it contains
-            the synchronization log, I assume that the purpose is to is solely
-            to send the synchronization log to the Desktop synchronization
-            software. This is seemingly used to determine if a full
-            (slow) sync is necessary. If the sync log is completely
-            empty the checksum of the message should be 213. The third
-            byte of the content of the message can be checked to
-            determine if a specific type of sync log is empty. This is
-            done by bitwise-anding the third byte of the message content
-            with the appropriate sync types mask and checking for a
-            resulting value of 0. If the resulting value is 0 then a
-            full (slow) sync has already been performed for that sync
-            type. The necessary masks for comparison are as follows:
+            It is a response to the \emph{RMG} message. Given that it
+            contains the synchronization log, I assume that the purpose
+            is to is solely to send the synchronization log to the
+            Desktop synchronization software. This is seemingly used to
+            determine if a Full (Slow) sync is necessary. If the sync
+            log is completely empty the \emph{Sync State Cleared} form
+            of the message is received and the checksum of the message
+            should be 213.
+            
+            If the sync log is NOT completely empty then the \emph{Sync
+            State Exists} form of the message will be received.  In this
+            form the third byte of the message content can be checked to
+            determine if a specific type of sync log is empty by means
+            of using bit-masks. This is done by bitwise-anding the third
+            byte of the message content with the appropriate sync types
+            mask and checking for a resulting value of 0. If the
+            resulting value is 0 then a Full (Slow) sync has already
+            been performed for that sync type. The necessary masks for
+            comparison are as follows:
 
             \begin{itemize}
             \item ToDo Mask \textbf{0x01}
