@@ -362,26 +362,31 @@
 
             \subsubsection{Content}
 
-            The \emph{RMS} contains 40 bytes of data. There have been two
-            cases that have been seen. The first two bytes of data refer to
-            the size of the log file content. Unlike most messages if the log
-            content is less then 38 bytes of data it is padded with 0x00s to
-            be a total of 38 bytes of data.
+            The \emph{RMS} always contains 40 bytes of data.  The first
+            two bytes of data refer to the size of the log file content.
+            Unlike most messages if the log content is less then 38
+            bytes of data it is padded with 0x00s to be a total of 38
+            bytes of data. Hence, if the size of the log is 0 the
+            content is simply 40 bytes of which all are 0x00s.
             
             \subsubsection{Purpose}
 
-            This message is used when doing a \emph{full sync}, or rather
-            \emph{slow sync}. It sets the log file record kept on the
-            Zaurus. This message is different then most though. Before it can
-            be used to set the log file record on the Zaurus it has to be used
-            to signify that the log file record is going to be reset. This is
-            done by sending an \emph{RMS} message containing all 0x00 bytes as
-            its content. After sending such an \emph{RMS} message one should
-            receive an \emph{ANG} message containing a value of 0x83.
+            This message is used when doing a \emph{full sync}, or
+            rather \emph{slow sync}. It sets the log file record kept on
+            the Zaurus. This message is different then most though.
+            Before it can be used to set the log file record on the
+            Zaurus it has to be used to signify that the log file record
+            is going to be reset. This is done by sending an \emph{RMS}
+            message containing all 0x00 bytes as its content. After
+            sending such an \emph{RMS} message one should receive an
+            abort common message and then following that receive an
+            \emph{ANG} message containing a value of 0x83.
 
             After it has been notified that it is going to reset the log
             record another \emph{RMS} message should be sent to the Zaurus
-            containing the log record for the Zaurus to store.
+            containing the log record for the Zaurus to store. After
+            send the second \emph{RMS} message if it was successful it
+            should receive an \emph{AEX} message in response.
 
         \subsection{RSS}
 
@@ -415,7 +420,8 @@
 
             This message looks to actually reset the state of items in the
             database on the Zaurus so that they will be recognized as new
-            items.
+            items. This message should receive an \emph{AEX} message in
+            response if it is successful.
 
         \subsection{RTG}
 
